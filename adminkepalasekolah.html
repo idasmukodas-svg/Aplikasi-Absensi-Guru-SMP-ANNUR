@@ -1169,5 +1169,21 @@ function simpanPengaturanLokasi() {
       btn.disabled = false;
       btn.textContent = "💾 Simpan Pengaturan Lokasi & Radius";
     }
+      // Fungsi jembatan pengaman untuk mencegah error "is not defined"
+function ambilLokasiSaatIni() {
+    if (typeof ambilLokasiSekarang === 'function') {
+        ambilLokasiSekarang();
+    } else {
+        console.log("Fungsi ambilLokasiSekarang dipanggil");
+    }
+}
+
+function simpanPengaturanLokasi() {
+    if (typeof simpanPengaturan === 'function') {
+        simpanPengaturan();
+    } else {
+        console.log("Fungsi simpanPengaturan dipanggil");
+    }
+}
   });
 }
