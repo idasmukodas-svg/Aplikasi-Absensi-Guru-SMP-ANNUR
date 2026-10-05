@@ -1,1 +1,0 @@
-# Aplikasi-Absensi-Guru-SMP-ANNUR
