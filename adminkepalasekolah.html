@@ -453,7 +453,24 @@
           </small>
         </div>
       </div>
+<script>
+  function ambilLokasiSaatIni() {
+    if (typeof window.ambilLokasiSaatIniActual === 'function') {
+      window.ambilLokasiSaatIniActual();
+    } else {
+      // Panggil fungsi asli Anda di sini jika namanya berbeda
+      if (typeof ambilLokasiSekarang === 'function') ambilLokasiSekarang();
+    }
+  }
 
+  function simpanPengaturanLokasi() {
+    if (typeof simpanPengaturan === 'function') {
+      simpanPengaturan();
+    } else {
+      console.log("Menjalankan simpan pengaturan...");
+    }
+  }
+</script>
       <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
         <button class="btn btn-info" onclick="ambilLokasiSaatIni()">
           📍 Ambil Lokasi Saya Sekarang
