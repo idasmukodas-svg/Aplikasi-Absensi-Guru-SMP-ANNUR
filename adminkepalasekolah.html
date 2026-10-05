@@ -630,15 +630,41 @@
       });
     });
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyA_xvQY0NubGpzBk-5Gm6Z2mqk5_EosNKs",
-      authDomain: "absensi-guru-annuur.firebaseapp.com",
-      projectId: "absensi-guru-annuur",
-      storageBucket: "absensi-guru-annuur.firebasestorage.app",
-      messagingSenderId: "1058517577681",
-      appId: "1:1058517577681:web:7f2b1e78599b29156c7af0",
-      measurementId: "G-YKYQL6NNTS"
-    };
+   // Import the functions you need from the SDKs you need
+
+import { initializeApp } from "firebase/app";
+
+// TODO: Add SDKs for Firebase products that you want to use
+
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+
+
+// Your web app's Firebase configuration
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
+
+  authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
+
+  projectId: "absensi-guru-smp-annuur",
+
+  storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
+
+  messagingSenderId: "423524830410",
+
+  appId: "1:423524830410:web:79bd2f85becf6ccdd87833"
+
+};
+
+
+
+// Initialize Firebase
+
+const app = initializeApp(firebaseConfig);
+
+
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
