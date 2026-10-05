@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi Guru - SMP PLUS ANNUUR</title>
+    
     <!-- Ikon Sekolah -->
     <link rel="icon" type="image/jpeg" href="logo.jpeg">
     <link rel="apple-touch-icon" href="logo.jpeg">
-    
-    <!-- Meta & Judul Halaman -->
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Admin Absensi - SMP PLUS ANNUUR</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- HTML5 QR Code Scanner -->
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-10">
 
@@ -84,43 +83,16 @@
 
   <script>
     // ----------------------------------------------------
-    // 1. KONFIGURASI FIREBASE ASLI (absensi-guru-annuur)
+    // 1. KONFIGURASI FIREBASE
     // ----------------------------------------------------
-    // Import the functions you need from the SDKs you need
-
-import { initializeApp } from "firebase/app";
-
-// TODO: Add SDKs for Firebase products that you want to use
-
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-
-
-// Your web app's Firebase configuration
-
-const firebaseConfig = {
-
-  apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
-
-  authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
-
-  projectId: "absensi-guru-smp-annuur",
-
-  storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
-
-  messagingSenderId: "423524830410",
-
-  appId: "1:423524830410:web:79bd2f85becf6ccdd87833"
-
-};
-
-
-
-// Initialize Firebase
-
-const app = initializeApp(firebaseConfig);
-
-
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
+      authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
+      projectId: "absensi-guru-smp-annuur",
+      storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
+      messagingSenderId: "423524830410",
+      appId: "1:423524830410:web:79bd2f85becf6ccdd87833"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -155,10 +127,10 @@ const app = initializeApp(firebaseConfig);
     }
 
     function initDeviceId() {
-      let id = localStorage.getItem("TRIHIRA_DEVICE_ID");
+      let id = localStorage.getItem("ANNUUR_DEVICE_ID");
       if (!id) {
         id = 'DEV-' + Math.random().toString(36).substring(2, 9).toUpperCase();
-        localStorage.setItem("TRIHIRA_DEVICE_ID", id);
+        localStorage.setItem("ANNUUR_DEVICE_ID", id);
       }
       deviceUUID = id;
       document.getElementById("device-id-display").innerText = id;
@@ -188,7 +160,6 @@ const app = initializeApp(firebaseConfig);
           return;
         }
 
-        // Urutkan Nama A-Z
         dataGuruSemua.sort((a, b) => (a.name > b.name) ? 1 : -1);
 
         select.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
@@ -311,23 +282,20 @@ const app = initializeApp(firebaseConfig);
       const guruNama = guruSelect.options[guruSelect.selectedIndex].text;
       
       const now = new Date();
-      const tglStr = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const tglStr = now.toISOString().split('T')[0];
       const jamStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-      // Validasi Device ID Terikat
       const guruObj = dataGuruSemua.find(g => g.id === guruId);
       if (guruObj && guruObj.device_id && guruObj.device_id !== deviceUUID) {
-        showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin/Kepala Sekolah untuk reset HP.", "error");
+        showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin untuk reset HP.", "error");
         return;
       }
 
-      // Jika belum terikat HP, ikat Device ID ini ke guru
       if (guruObj && !guruObj.device_id) {
         await db.collection("teachers").doc(guruId).update({ device_id: deviceUUID });
       }
 
       try {
-        // Cek apakah guru sudah melakukan absensi pada tanggal hari ini
         const attendanceRef = db.collection("attendances");
         const querySnapshot = await attendanceRef
           .where("date", "==", tglStr)
@@ -335,13 +303,10 @@ const app = initializeApp(firebaseConfig);
           .get();
 
         if (querySnapshot.empty) {
-          // =====================================================
-          // KONDISI 1: Belum ada absen hari ini -> CATAT MASUK
-          // =====================================================
           const payloadMasuk = {
             teacher_id: guruId,
             teacher_name: guruNama,
-            user_name: guruNama, // Sesuai struktur data dashboard admin
+            user_name: guruNama,
             device_id: deviceUUID,
             qr_code: qrContent,
             latitude: userLat,
@@ -357,15 +322,11 @@ const app = initializeApp(firebaseConfig);
           showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
 
         } else {
-          // Ambil dokumen absensi yang sudah ada di hari ini
           const docSnap = querySnapshot.docs[0];
           const docId = docSnap.id;
           const dataAbsen = docSnap.data();
 
           if (!dataAbsen.check_out_time || dataAbsen.check_out_time === "-") {
-            // =====================================================
-            // KONDISI 2: Sudah absen masuk, belum pulang -> CATAT PULANG
-            // =====================================================
             await attendanceRef.doc(docId).update({
               check_out_time: jamStr,
               check_out_latitude: userLat,
@@ -375,9 +336,6 @@ const app = initializeApp(firebaseConfig);
             showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
 
           } else {
-            // =====================================================
-            // KONDISI 3: Sudah lengkap (Masuk & Pulang) -> TOLAK
-            // =====================================================
             showAlert(`⚠️ Mohon Maaf, ${guruNama}, Anda sudah menyelesaikan Absensi Masuk dan Pulang untuk hari ini.`, "error");
           }
         }
