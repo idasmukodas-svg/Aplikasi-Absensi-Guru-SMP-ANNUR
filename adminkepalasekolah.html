@@ -1099,73 +1099,75 @@
     }
 
     function ambilLokasiSaatIni() {
-      if (!navigator.geolocation) { alert("Browser Anda tidak mendukung fitur Geolocation GPS."); return; }
-      const btn = document.querySelector('#sec-lokasi .btn-info');
-      btn.innerText = "⏳ Mengambil GPS...";
-      btn.disabled = true;
+  if (!navigator.geolocation) { 
+    alert("Browser Anda tidak mendukung fitur Geolocation GPS."); 
+    return; 
+  }
+  const btn = document.querySelector('#sec-lokasi .btn-info');
+  btn.innerText = "⏳ Mengambil GPS...";
+  btn.disabled = true;
 
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          document.getElementById("inputLat").value = pos.coords.latitude;
-          document.getElementById("inputLng").value = pos.coords.longitude;
-          tampilkanPesanAdmin("✅ Titik GPS saat ini berhasil diambil! Klik Simpan.", true);
-          btn.innerText = "📍 Ambil Lokasi Saya Sekarang";
-          btn.disabled = false;
-        },
-        (err) => {
-          tampilkanPesanAdmin("❌ Gagal mengambil GPS: " + err.message, false);
-          btn.innerText = "📍 Ambil Lokasi Saya Sekarang";
-          btn.disabled = false;
-          alert("Pastikan Izin Lokasi di Browser Anda sudah diaktifkan (Allow).");
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById("inputLat").value = pos.coords.latitude;
+      document.getElementById("inputLng").value = pos.coords.longitude;
+      alert("✅ Titik GPS saat ini berhasil diambil! Klik Simpan.");
+      btn.innerText = "📍 Ambil Lokasi Saya Sekarang";
+      btn.disabled = false;
+    },
+    (err) => {
+      alert("❌ Gagal mengambil GPS: " + err.message);
+      btn.innerText = "📍 Ambil Lokasi Saya Sekarang";
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
 
-   function simpanPengaturanLokasi() {
-    const latStr = document.getElementById("inputLat").value.trim();
-    const lngStr = document.getElementById("inputLng").value.trim();
-    const radStr = document.getElementById("inputRadius").value.trim();
+function simpanPengaturanLokasi() {
+  const latStr = document.getElementById("inputLat").value.trim();
+  const lngStr = document.getElementById("inputLng").value.trim();
+  const radStr = document.getElementById("inputRadius").value.trim();
 
-    if (!latStr || !lngStr || !radStr) { 
-        alert("Harap isi Latitude, Longitude, dan Radius!"); 
-        return; 
-    }
-    
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
-    const radius = parseInt(radStr);
+  if (!latStr || !lngStr || !radStr) { 
+    alert("Harap isi Latitude, Longitude, dan Radius!"); 
+    return; 
+  }
+  
+  const lat = parseFloat(latStr);
+  const lng = parseFloat(lngStr);
+  const radius = parseInt(radStr);
 
-    if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { 
-        alert("Format angka tidak valid!"); 
-        return; 
-    }
+  if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { 
+    alert("Format angka tidak valid!"); 
+    return; 
+  }
 
-    const btn = document.querySelector('button[onclick="simpanPengaturanLokasi()"]');
+  const btn = document.querySelector('button[onclick="simpanPengaturanLokasi()"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Menyimpan...";
+  }
+
+  db.collection("settings").doc("school_location").set({
+    latitude: lat,
+    longitude: lng,
+    radius_meters: radius,
+    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then(() => {
+    alert("✅ Pengaturan lokasi & radius berhasil disimpan ke database!");
+    generateQR(lat, lng, radius);
     if (btn) {
-        btn.disabled = true;
-        btn.textContent = "Menyimpan...";
+      btn.disabled = false;
+      btn.textContent = "💾 Simpan Pengaturan Lokasi & Radius";
     }
-
-    // Contoh penyimpanan (sesuaikan dengan backend/database/localStorage Anda, misal Firebase):
-    // Menggunakan localStorage sebagai contoh penyimpanan lokal:
-    try {
-        localStorage.setItem("school_lat", lat);
-        localStorage.setItem("school_lng", lng);
-        localStorage.setItem("school_radius", radius);
-        
-        setTimeout(() => {
-            alert("Pengaturan lokasi & radius berhasil disimpan!");
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = "Simpan Pengaturan Lokasi & Radius";
-            }
-        }, 500);
-    } catch (error) {
-        alert("Gagal menyimpan: " + error.message);
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Simpan Pengaturan Lokasi & Radius";
-        }
+  })
+  .catch((error) => {
+    alert("❌ Gagal menyimpan ke database: " + error.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "💾 Simpan Pengaturan Lokasi & Radius";
     }
+  });
 }
