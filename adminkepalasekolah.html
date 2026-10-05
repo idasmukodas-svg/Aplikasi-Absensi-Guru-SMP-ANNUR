@@ -501,15 +501,81 @@
             <label><input type="checkbox" name="workDays" value="Sabtu"> Sabtu</label>
           </div>
 
-          <div style="display: flex; gap: 8px;">
-            <button id="btnSimpanGuru" onclick="simpanAtauUpdateGuru()" class="btn btn-success" style="flex: 1; justify-content: center;">➕ Simpan Guru</button>
-            <button id="btnBatalEdit" onclick="batalEditGuru()" class="btn btn-secondary" style="display: none; justify-content: center;">❌ Batal</button>
-          </div>
-        </div>
+          <!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Admin Absensi Guru - SMP PLUS ANNUUR</title>
+  <!-- SheetJS untuk Excel Export & Import -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- QRCode Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* Styling dasar pendukung tampilan */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; margin: 0; padding: 0; color: #334155; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 24px; margin-bottom: 24px; }
+    h2 { font-size: 1.25rem; color: #1e293b; margin-top: 0; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 6px; margin-bottom: 14px; box-sizing: border-box; }
+    .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-warning { background: #ca8a04; color: #fff; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .btn-info { background: #0891b2; color: #fff; }
+    .btn-secondary { background: #64748b; color: #fff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    th { background: #f1f5f9; color: #334155; }
+    footer { background: #0f172a; color: #94a3b8; padding: 40px 20px 20px 20px; margin-top: 40px; }
+    .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+    .footer-section h3 { color: #f8fafc; font-size: 16px; margin-bottom: 14px; }
+    .footer-links { list-style: none; padding: 0; margin: 0; }
+    .footer-links li { margin-bottom: 8px; }
+    .footer-links a { color: #94a3b8; text-decoration: none; }
+    .footer-links a:hover { color: #fff; }
+    .footer-bottom { max-width: 1200px; margin: 30px auto 0 auto; border-top: 1px solid #1e293b; padding-top: 20px; text-align: center; font-size: 13px; }
+    .badge-masuk { background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .badge-pulang { background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+    .badge-persen { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; }
+  </style>
+</head>
+<body>
 
+  <div class="container">
+    
+    <!-- Bagian Form Kelola Guru -->
+    <div class="card" id="sec-guru">
+      <h2 id="formGuruTitle">✏️ Tambah Guru & Hari Kerja</h2>
+      <input type="hidden" id="editGuruDocId">
+      
+      <div>
+        <label><strong>Nama Lengkap Guru:</strong></label>
+        <input type="text" id="inputNamaManual" class="form-control" placeholder="Contoh: Budi Santoso, S.Pd.">
       </div>
 
-      <h3 style="margin-top: 20px; font-size: 15px; color: #333;">Daftar Guru & Hari Kerja Terdaftar:</h3>
+      <div style="margin-bottom: 14px;">
+        <label><strong>Pilih Hari Kerja:</strong></label><br>
+        <div style="display: flex; gap: 15px; margin-top: 6px; flex-wrap: wrap;">
+          <label><input type="checkbox" name="workDays" value="Senin" checked> Senin</label>
+          <label><input type="checkbox" name="workDays" value="Selasa" checked> Selasa</label>
+          <label><input type="checkbox" name="workDays" value="Rabu" checked> Rabu</label>
+          <label><input type="checkbox" name="workDays" value="Kamis" checked> Kamis</label>
+          <label><input type="checkbox" name="workDays" value="Jumat" checked> Jumat</label>
+          <label><input type="checkbox" name="workDays" value="Sabtu"> Sabtu</label>
+          <label><input type="checkbox" name="workDays" value="Minggu"> Minggu</label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button id="btnSimpanGuru" onclick="simpanAtauUpdateGuru()" class="btn btn-success" style="flex: 1; justify-content: center;">➕ Simpan Guru</button>
+        <button id="btnBatalEdit" onclick="batalEditGuru()" class="btn btn-secondary" style="display: none; justify-content: center;">❌ Batal</button>
+      </div>
+
+      <h3 style="margin-top: 25px; font-size: 15px; color: #333;">Daftar Guru & Hari Kerja Terdaftar:</h3>
       <div style="max-height: 250px; overflow-y: auto;">
         <table>
           <thead>
@@ -532,7 +598,7 @@
       <h2>2. Rekapitulasi Absensi & Persentase Kehadiran Guru</h2>
       
       <div class="filter-panel">
-        <div class="filter-group">
+        <div class="filter-group" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
           <div>
             <label><strong>Pilih Mode Rekap:</strong></label><br>
             <select id="modeRekap" class="form-control" onchange="gantiModeTampilan()" style="font-weight: bold; color: #2e7d32; width: auto;">
@@ -559,7 +625,7 @@
             </select>
           </div>
 
-          <div style="margin-top: 18px; display: flex; gap: 8px;">
+          <div style="margin-bottom: 14px; display: flex; gap: 8px;">
             <button class="btn btn-primary" onclick="resetFilter()">🔄 Reset</button>
             <button class="btn btn-success" onclick="exportKeExcel()">📊 Export Excel</button>
           </div>
@@ -584,8 +650,6 @@
       <div class="footer-section">
         <h3>Akses Cepat Menu</h3>
         <ul class="footer-links">
-          <li><a href="#sec-lokasi">📍 Pengaturan Titik GPS & Radius</a></li>
-          <li><a href="#sec-qrcode">🔲 QR Code Absensi Utama</a></li>
           <li><a href="#sec-guru">👥 Kelola Data & Hari Kerja Guru</a></li>
           <li><a href="#sec-rekap">📊 Rekapitulasi & Export Excel</a></li>
         </ul>
@@ -613,159 +677,32 @@
     </div>
   </footer>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <script>
-    function toggleMenu() {
-      const menu = document.getElementById("navbarMenu");
-      menu.classList.toggle("show");
-    }
-
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.addEventListener('click', function() {
-        navLinks.forEach(l => l.classList.remove('active'));
-        this.classList.add('active');
-        
-        const menu = document.getElementById("navbarMenu");
-        if (menu.classList.contains("show")) {
-          menu.classList.remove("show");
-        }
-      });
-    });
-
-   // Import the functions you need from the SDKs you need
-
-import { initializeApp } from "firebase/app";
-
-// TODO: Add SDKs for Firebase products that you want to use
-
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-
-
-// Your web app's Firebase configuration
-
-const firebaseConfig = {
-
-  apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
-
-  authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
-
-  projectId: "absensi-guru-smp-annuur",
-
-  storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
-
-  messagingSenderId: "423524830410",
-
-  appId: "1:423524830410:web:79bd2f85becf6ccdd87833"
-
-};
-
-
-
-// Initialize Firebase
-
-const app = initializeApp(firebaseConfig);
-
-
+    // Konfigurasi & Inisialisasi Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
+      authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
+      projectId: "absensi-guru-smp-annuur",
+      storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
+      messagingSenderId: "423524830410",
+      appId: "1:423524830410:web:79bd2f85becf6ccdd87833"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    new QRCode(document.getElementById("qrcode"), { text: "QR_NUSAKARYA_UTAMA", width: 160, height: 160 });
-
     let dataGuruSemua = [];
     let dataAbsensiSemua = [];
-
-    const DEFAULT_LAT = -7.345545;
-    const DEFAULT_LNG = 108.057451;
-    const DEFAULT_RADIUS = 50;
 
     const now = new Date();
     document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
     document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    function loadPengaturanSekolah() {
-      db.collection("settings").doc("school_location").get().then((doc) => {
-        if (doc.exists) {
-          const data = doc.data();
-          const lat = data.latitude !== undefined ? data.latitude : DEFAULT_LAT;
-          const lng = data.longitude !== undefined ? data.longitude : DEFAULT_LNG;
-          const rad = data.radius_meters !== undefined ? data.radius_meters : DEFAULT_RADIUS;
-
-          document.getElementById("inputLat").value = lat;
-          document.getElementById("inputLng").value = lng;
-          document.getElementById("inputRadius").value = rad;
-          document.getElementById("statRadiusDisplay").innerText = rad + " m";
-        } else {
-          document.getElementById("inputLat").value = DEFAULT_LAT;
-          document.getElementById("inputLng").value = DEFAULT_LNG;
-          document.getElementById("inputRadius").value = DEFAULT_RADIUS;
-          document.getElementById("statRadiusDisplay").innerText = DEFAULT_RADIUS + " m";
-        }
-      }).catch(err => {
-        tampilkanPesanAdmin("Gagal memuat pengaturan lokasi: " + err.message, false);
-      });
-    }
-
-    function ambilLokasiSaatIni() {
-      if (!navigator.geolocation) {
-        alert("Browser Anda tidak mendukung fitur Geolocation GPS.");
-        return;
-      }
-
-      tampilkanPesanAdmin("⏳ Mengambil titik koordinat GPS Anda...", true);
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          document.getElementById("inputLat").value = pos.coords.latitude;
-          document.getElementById("inputLng").value = pos.coords.longitude;
-          tampilkanPesanAdmin("✅ Titik GPS saat ini berhasil diambil!", true);
-        },
-        (err) => {
-          tampilkanPesanAdmin("❌ Gagal mengambil GPS: " + err.message, false);
-        },
-        { enableHighAccuracy: true }
-      );
-    }
-
-    function simpanPengaturanLokasi() {
-      const lat = parseFloat(document.getElementById("inputLat").value);
-      const lng = parseFloat(document.getElementById("inputLng").value);
-      const radius = parseInt(document.getElementById("inputRadius").value);
-
-      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) {
-        alert("Harap masukkan Latitude, Longitude, dan Radius dengan format angka yang valid!");
-        return;
-      }
-
-      db.collection("settings").doc("school_location").set({
-        latitude: lat,
-        longitude: lng,
-        radius_meters: radius,
-        updated_at: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).then(() => {
-        document.getElementById("statRadiusDisplay").innerText = radius + " m";
-        tampilkanPesanAdmin(`✅ Berhasil menyimpan pengaturan! Titik: (${lat}, ${lng}) | Radius: ${radius} Meter`, true);
-      }).catch(err => {
-        tampilkanPesanAdmin("❌ Gagal menyimpan pengaturan: " + err.message, false);
-      });
-    }
-
-    function tampilkanPesanAdmin(teks, isSuccess) {
-      const msg = document.getElementById("adminMsg");
-      msg.innerText = teks;
-      msg.style.display = "block";
-      msg.style.background = isSuccess ? "#e8f5e9" : "#ffebee";
-      msg.style.color = isSuccess ? "#2e7d32" : "#c62828";
-      msg.style.border = isSuccess ? "1px solid #c8e6c9" : "1px solid #ffcdd2";
-    }
-
     function loadDataAwal() {
-      loadPengaturanSekolah();
       Promise.all([
         db.collection("teachers").get(),
         db.collection("attendances").get()
@@ -773,7 +710,6 @@ const app = initializeApp(firebaseConfig);
         dataGuruSemua = teachersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         dataAbsensiSemua = attendancesSnap.docs.map(doc => doc.data());
         
-        updateKartuStatistik();
         renderTabelMasterGuru();
         isiDropdownGuru();
         renderLaporan();
@@ -784,69 +720,9 @@ const app = initializeApp(firebaseConfig);
 
     loadDataAwal();
 
-    function updateKartuStatistik() {
-      const tglHariIni = new Date().toISOString().split('T')[0];
-      document.getElementById("statTotalGuru").innerText = dataGuruSemua.length;
-      const hadirHariIni = dataAbsensiSemua.filter(a => a.date === tglHariIni && a.check_in_time && a.check_in_time !== "-").length;
-      document.getElementById("statHadirHariIni").innerText = hadirHariIni;
-      const hpTerikat = dataGuruSemua.filter(g => g.device_id).length;
-      document.getElementById("statHpTerikat").innerText = hpTerikat;
-    }
-
     function formatNamaRapi(str) {
       if (!str) return "";
       return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ').trim();
-    }
-
-    function prosesUploadMasterGuru() {
-      const fileInput = document.getElementById("excelFile");
-      const file = fileInput.files[0];
-
-      if (!file) {
-        alert("Silakan pilih file Excel (.xlsx) terlebih dahulu!");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-        let batch = db.batch();
-        let count = 0;
-        const defaultDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-
-        jsonData.forEach((row, index) => {
-          if (row.length > 0 && row[0]) {
-            const namaGuru = formatNamaRapi(String(row[0]));
-            if (namaGuru && namaGuru.toLowerCase() !== "nama" && namaGuru.toLowerCase() !== "nama guru") {
-              const docRef = db.collection("teachers").doc();
-              batch.set(docRef, {
-                name: namaGuru,
-                work_days: defaultDays,
-                device_id: null,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-              });
-              count++;
-            }
-          }
-        });
-
-        if (count > 0) {
-          batch.commit().then(() => {
-            alert(`Berhasil mengimport ${count} data guru dari file Excel!`);
-            fileInput.value = "";
-            loadDataAwal();
-          }).catch(err => {
-            alert("Gagal mengimport data: " + err.message);
-          });
-        } else {
-          alert("Tidak ada data nama guru yang valid ditemukan di file Excel.");
-        }
-      };
-      reader.readAsArrayBuffer(file);
     }
 
     function renderTabelMasterGuru() {
@@ -991,21 +867,17 @@ const app = initializeApp(firebaseConfig);
       renderLaporan();
     }
 
-    // PENCOCOKAN PERSISI BERDASARKAN USER_NAME & FIELDFORM
     function isGuruAbsenMatch(record, guru) {
       if (!record || !guru) return false;
 
-      // 1. Cek jika ada ID Guru
       if ((record.teacher_id && record.teacher_id === guru.id) || 
           (record.guru_id && record.guru_id === guru.id)) {
         return true;
       }
 
-      // 2. Baca field user_name, teacher_name, nama_guru, atau nama
       const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
       const namaGuruDbRaw = guru.name || "";
 
-      // Normalisasi string (hapus karakter selain huruf/angka dan ubah ke lowercase)
       const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 
       const cleanAbsen = clean(namaAbsenRaw);
