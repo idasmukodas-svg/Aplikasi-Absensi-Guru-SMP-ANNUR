@@ -1123,15 +1123,49 @@
     }
 
     function simpanPengaturanLokasi() {
-      const latStr = document.getElementById("inputLat").value.trim();
-      const lngStr = document.getElementById("inputLng").value.trim();
-      const radStr = document.getElementById("inputRadius").value.trim();
+    const latStr = document.getElementById("inputLat").value.trim();
+    const lngStr = document.getElementById("inputLng").value.trim();
+    const radStr = document.getElementById("inputRadius").value.trim();
 
-      if (!latStr || !lngStr || !radStr) { alert("Harap isi Latitude, Longitude, dan Radius!"); return; }
-      const lat = parseFloat(latStr);
-      const lng = parseFloat(lngStr);
-      const radius = parseInt(radStr);
+    if (!latStr || !lngStr || !radStr) { 
+        alert("Harap isi Latitude, Longitude, dan Radius!"); 
+        return; 
+    }
+    
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    const radius = parseInt(radStr);
 
-      if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { alert("Format angka tidak valid!"); return; }
+    if (isNaN(lat) || isNaN(lng) || isNaN(radius)) { 
+        alert("Format angka tidak valid!"); 
+        return; 
+    }
 
-      const btn = document.querySelector
+    const btn = document.querySelector('button[onclick="simpanPengaturanLokasi()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Menyimpan...";
+    }
+
+    // Contoh penyimpanan (sesuaikan dengan backend/database/localStorage Anda, misal Firebase):
+    // Menggunakan localStorage sebagai contoh penyimpanan lokal:
+    try {
+        localStorage.setItem("school_lat", lat);
+        localStorage.setItem("school_lng", lng);
+        localStorage.setItem("school_radius", radius);
+        
+        setTimeout(() => {
+            alert("Pengaturan lokasi & radius berhasil disimpan!");
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "Simpan Pengaturan Lokasi & Radius";
+            }
+        }, 500);
+    } catch (error) {
+        alert("Gagal menyimpan: " + error.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Simpan Pengaturan Lokasi & Radius";
+        }
+    }
+}
