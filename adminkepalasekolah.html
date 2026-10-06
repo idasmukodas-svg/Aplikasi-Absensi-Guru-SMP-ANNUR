@@ -8,6 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Firebase SDK versi Compat (Stabil & Langsung Bisa Digunakan di Browser) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <style>
     :root {
       --primary: #1b5e20;
@@ -22,26 +27,21 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
     
-    /* Navbar */
     header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     header h1 { font-size: 1.2rem; font-weight: 600; }
     .nav-links { display: flex; gap: 20px; }
     .nav-links a { color: white; text-decoration: none; font-size: 0.9rem; font-weight: 500; opacity: 0.8; transition: 0.3s; }
     .nav-links a:hover, .nav-links a.active { opacity: 1; border-bottom: 2px solid white; }
 
-    /* Main Container */
     .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; width: 100%; flex: 1; }
-    
     .card { background: var(--card-bg); border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border-color); }
     .card h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
 
-    /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px; }
     .stat-card { background: white; padding: 20px; border-radius: 10px; border-left: 5px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
     .stat-card h3 { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
     .stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
 
-    /* Form & Input Elements */
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 5px; color: var(--text-muted); }
     .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem; outline: none; transition: border 0.3s; }
@@ -59,11 +59,9 @@
     .btn-info { background: #009688; color: white; }
     .btn-info:hover { background: #00796b; }
 
-    /* Grid Layout untuk Kelola Guru */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* Tabel */
     .table-responsive { width: 100%; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; text-align: left; }
     th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); }
@@ -74,9 +72,7 @@
     .badge-pulang { background: #fff3e0; color: #ef6c00; padding: 4px 8px; border-radius: 4px; font-weight: 500; }
     .badge-persen { background: #e3f2fd; color: #1565c0; padding: 4px 8px; border-radius: 4px; font-weight: 500; }
 
-    /* Filter Panel */
     .filter-panel { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
-    
     footer { text-align: center; padding: 20px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-color); background: white; }
   </style>
 </head>
@@ -93,8 +89,6 @@
   </header>
 
   <div class="container">
-    
-    <!-- Statistik Ringkas -->
     <div class="stats-grid">
       <div class="stat-card">
         <h3>Total Guru Terdaftar</h3>
@@ -117,22 +111,19 @@
     <!-- 1. KELOLA MASTER DATA & HARI KERJA GURU -->
     <div class="card" id="masterSection">
       <h2>1. Kelola Master Data & Hari Kerja Guru</h2>
-      
       <div id="adminMsg" style="display:none; padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem;"></div>
 
       <div class="grid-2">
-        <!-- Kolom Kiri: Import Excel & Pengaturan Lokasi -->
         <div>
           <div style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-light); margin-bottom: 20px;">
             <h3 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 10px;">📁 Import dari File Excel (.xlsx)</h3>
             <div class="form-group">
               <input type="file" id="excelFile" accept=".xlsx, .xls" class="form-control" style="padding: 6px;">
             </div>
-            <button class="btn btn-success" onclick="window.prosesUploadMasterGuru()">🚀 Import File Excel</button>
+            <button class="btn btn-success" onclick="prosesUploadMasterGuru()">🚀 Import File Excel</button>
             <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Kolom pertama pada excel wajib berisi: <strong>Nama Guru</strong></p>
           </div>
 
-          <!-- Pengaturan Titik GPS & Radius -->
           <div style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);" id="lokasiSection">
             <h3 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 10px;">📍 Pengaturan Titik Koordinat & Radius Sekolah</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -150,13 +141,12 @@
               <input type="number" id="inputRadius" class="form-control" value="50">
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-info" onclick="window.ambilLokasiSaatIni()">🎯 Ambil Lokasi GPS Saat Ini</button>
-              <button class="btn btn-primary" onclick="window.simpanPengaturanLokasi()">💾 Simpan Pengaturan</button>
+              <button class="btn btn-info" onclick="ambilLokasiSaatIni()">🎯 Ambil Lokasi GPS Saat Ini</button>
+              <button class="btn btn-primary" onclick="simpanPengaturanLokasi()">💾 Simpan Pengaturan</button>
             </div>
           </div>
         </div>
 
-        <!-- Kolom Kanan: Tambah / Edit Manual Guru & Hari Kerja -->
         <div style="background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
           <h3 style="font-size: 0.9rem; color: var(--primary); margin-bottom: 10px;" id="formGuruTitle">✏️ Tambah Guru & Hari Kerja</h3>
           <input type="hidden" id="editGuruDocId">
@@ -176,13 +166,12 @@
             </div>
           </div>
           <div style="margin-top: 15px; display: flex; gap: 10px;">
-            <button class="btn btn-success" id="btnSimpanGuru" onclick="window.simpanAtauUpdateGuru()">➕ Simpan Guru</button>
-            <button class="btn btn-warning" id="btnBatalEdit" style="display:none;" onclick="window.batalEditGuru()">Batal</button>
+            <button class="btn btn-success" id="btnSimpanGuru" onclick="simpanAtauUpdateGuru()">➕ Simpan Guru</button>
+            <button class="btn btn-warning" id="btnBatalEdit" style="display:none;" onclick="batalEditGuru()">Batal</button>
           </div>
         </div>
       </div>
 
-      <!-- Tabel Daftar Guru -->
       <h3 style="font-size: 0.95rem; color: var(--primary); margin: 25px 0 10px 0;">Daftar Guru & Hari Kerja Terdaftar:</h3>
       <div class="table-responsive">
         <table>
@@ -208,7 +197,7 @@
       <div class="filter-panel">
         <div class="form-group" style="margin-bottom:0;">
           <label>Mode Tampilan Rekap</label>
-          <select id="modeRekap" class="form-control" onchange="window.gantiModeTampilan()">
+          <select id="modeRekap" class="form-control" onchange="gantiModeTampilan()">
             <option value="harian">Rekap Harian</option>
             <option value="bulanan">Rekap Bulanan (Persentase)</option>
             <option value="perguru">Riwayat Per-Guru</option>
@@ -217,46 +206,39 @@
 
         <div class="form-group" style="margin-bottom:0;" id="boxFilterTanggal">
           <label>Pilih Tanggal</label>
-          <input type="date" id="filterTanggal" class="form-control" onchange="window.renderLaporan()">
+          <input type="date" id="filterTanggal" class="form-control" onchange="renderLaporan()">
         </div>
 
         <div class="form-group" style="margin-bottom:0; display:none;" id="boxFilterBulan">
           <label>Pilih Bulan</label>
-          <input type="month" id="filterBulan" class="form-control" onchange="window.renderLaporan()">
+          <input type="month" id="filterBulan" class="form-control" onchange="renderLaporan()">
         </div>
 
         <div class="form-group" style="margin-bottom:0; display:none;" id="boxFilterGuru">
           <label>Pilih Nama Guru</label>
-          <select id="filterGuru" class="form-control" onchange="window.renderLaporan()">
+          <select id="filterGuru" class="form-control" onchange="renderLaporan()">
             <option value="">-- Semua Guru --</option>
           </select>
         </div>
 
         <div>
-          <button class="btn btn-primary" onclick="window.exportKeExcel()">📊 Export ke Excel</button>
-          <button class="btn btn-warning" onclick="window.resetFilter()">Reset Filter</button>
+          <button class="btn btn-primary" onclick="exportKeExcel()">📊 Export ke Excel</button>
+          <button class="btn btn-warning" onclick="resetFilter()">Reset Filter</button>
         </div>
       </div>
 
       <div class="table-responsive">
-        <table id="tabelDinamis">
-          <!-- Tabel dirender dinamis via JS -->
-        </table>
+        <table id="tabelDinamis"></table>
       </div>
     </div>
-
   </div>
 
   <footer>
     &copy; 2026 E-Admin Absensi Guru SMP Annuur. All rights reserved.
   </footer>
 
-  <!-- Script Firebase & Logika Aplikasi Modular -->
-  <script type="module">
-    import { initializeApp } from "firebase/app";
-    import { getFirestore, collection, doc, getDoc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "firebase/firestore";
-
-    // Konfigurasi Firebase Anda
+  <!-- Script Logika Aplikasi menggunakan Firebase Compat -->
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
       authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
@@ -267,12 +249,9 @@
       appId: "1:423524830410:web:415914902d5fcdbcd87833"
     };
 
-    // Inisialisasi Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Ekspos db ke window jika dibutuhkan helper lain
-    window.db = db;
+    // Inisialisasi Firebase Compat
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
     let dataGuruSemua = [];
     let dataAbsensiSemua = [];
@@ -281,7 +260,6 @@
     const DEFAULT_LNG = 108.057451;
     const DEFAULT_RADIUS = 50;
 
-    // Set default tanggal hari ini
     const now = new Date();
     const elTgl = document.getElementById("filterTanggal");
     const elBln = document.getElementById("filterBulan");
@@ -290,10 +268,9 @@
 
     async function loadPengaturanSekolah() {
       try {
-        const docRef = doc(db, "settings", "school_location");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        const docRef = await db.collection("settings").doc("school_location").get();
+        if (docRef.exists) {
+          const data = docRef.data();
           const lat = data.latitude !== undefined ? data.latitude : DEFAULT_LAT;
           const lng = data.longitude !== undefined ? data.longitude : DEFAULT_LNG;
           const rad = data.radius_meters !== undefined ? data.radius_meters : DEFAULT_RADIUS;
@@ -345,12 +322,11 @@
       }
 
       try {
-        const docRef = doc(db, "settings", "school_location");
-        await setDoc(docRef, {
+        await db.collection("settings").doc("school_location").set({
           latitude: lat,
           longitude: lng,
           radius_meters: radius,
-          updated_at: serverTimestamp()
+          updated_at: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
         const statDisplay = document.getElementById("statRadiusDisplay");
@@ -375,8 +351,8 @@
       await loadPengaturanSekolah();
       try {
         const [teachersSnap, attendancesSnap] = await Promise.all([
-          getDocs(collection(db, "teachers")),
-          getDocs(collection(db, "attendances"))
+          db.collection("teachers").get(),
+          db.collection("attendances").get()
         ]);
         
         dataGuruSemua = teachersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -419,370 +395,4 @@
       const fileInput = document.getElementById("excelFile");
       if (!fileInput || !fileInput.files[0]) {
         alert("Silakan pilih file Excel (.xlsx) terlebih dahulu!");
-        return;
-      }
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-        let batch = writeBatch(db);
-        let count = 0;
-        const defaultDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-
-        jsonData.forEach((row) => {
-          if (row.length > 0 && row[0]) {
-            const namaGuru = formatNamaRapi(String(row[0]));
-            if (namaGuru && namaGuru.toLowerCase() !== "nama" && namaGuru.toLowerCase() !== "nama guru") {
-              const docRef = doc(collection(db, "teachers"));
-              batch.set(docRef, {
-                name: namaGuru,
-                work_days: defaultDays,
-                device_id: null,
-                timestamp: serverTimestamp()
-              });
-              count++;
-            }
-          }
-        });
-
-        if (count > 0) {
-          try {
-            await batch.commit();
-            alert(`Berhasil mengimport ${count} data guru dari file Excel!`);
-            fileInput.value = "";
-            loadDataAwal();
-          } catch (err) {
-            alert("Gagal mengimport data: " + err.message);
-          }
-        } else {
-          alert("Tidak ada data nama guru yang valid ditemukan di file Excel.");
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
-    function renderTabelMasterGuru() {
-      const tbody = document.getElementById("tabel-master-guru");
-      if (!tbody) return;
-
-      if (dataGuruSemua.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4">Belum ada nama guru terdaftar.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = "";
-      let no = 1;
-      dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-        const hariStr = g.work_days ? g.work_days.join(", ") : "Senin - Jumat";
-        const hasDevice = g.device_id ? true : false;
-
-        tbody.innerHTML += `
-          <tr>
-            <td>${no++}</td>
-            <td class="nama-guru">
-              ${formatNamaRapi(g.name)}
-              ${hasDevice ? '<br><small style="color: #2e7d32; font-weight: normal;">📱 HP Terikat</small>' : ''}
-            </td>
-            <td><small>${hariStr}</small></td>
-            <td>
-              <button class="btn btn-warning" onclick="window.editGuru('${g.id}')">✏️ Edit</button>
-              ${hasDevice ? `<button class="btn btn-info" onclick="window.resetDeviceGuru('${g.id}', '${g.name}')">🔄 Reset HP</button>` : ''}
-              <button class="btn btn-danger" onclick="window.hapusGuru('${g.id}', '${g.name}')">🗑️ Hapus</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    window.simpanAtauUpdateGuru = async function() {
-      const docId = document.getElementById("editGuruDocId").value;
-      const namaInput = document.getElementById("inputNamaManual").value.trim();
-      
-      if (!namaInput) {
-        alert("Ketikkan nama lengkap guru terlebih dahulu!");
-        return;
-      }
-
-      const checkboxes = document.querySelectorAll('input[name="workDays"]:checked');
-      const selectedDays = Array.from(checkboxes).map(cb => cb.value);
-
-      if (selectedDays.length === 0) {
-        alert("Pilih minimal 1 hari kerja untuk guru!");
-        return;
-      }
-
-      const namaRapi = formatNamaRapi(namaInput);
-
-      try {
-        if (docId) {
-          await updateDoc(doc(db, "teachers", docId), {
-            name: namaRapi,
-            work_days: selectedDays
-          });
-          alert(`Data guru "${namaRapi}" berhasil diperbarui!`);
-        } else {
-          await addDoc(collection(db, "teachers"), {
-            name: namaRapi,
-            work_days: selectedDays,
-            device_id: null,
-            timestamp: serverTimestamp()
-          });
-          alert(`Berhasil menambahkan "${namaRapi}" dengan hari kerja: ${selectedDays.join(', ')}`);
-        }
-        window.batalEditGuru();
-        loadDataAwal();
-      } catch (err) {
-        alert("Gagal menyimpan data guru: " + err.message);
-      }
-    }
-
-    window.editGuru = function(docId) {
-      const g = dataGuruSemua.find(item => item.id === docId);
-      if (!g) return;
-
-      document.getElementById("editGuruDocId").value = docId;
-      document.getElementById("inputNamaManual").value = g.name || "";
-
-      const checkboxes = document.querySelectorAll('input[name="workDays"]');
-      checkboxes.forEach(cb => {
-        cb.checked = g.work_days ? g.work_days.includes(cb.value) : false;
-      });
-
-      document.getElementById("formGuruTitle").innerText = "✏ Edit Data Guru";
-      document.getElementById("btnSimpanGuru").innerText = "💾 Update Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-primary";
-      document.getElementById("btnBatalEdit").style.display = "inline-block";
-
-      document.getElementById("formGuruTitle").scrollIntoView({ behavior: 'smooth' });
-    }
-
-    window.batalEditGuru = function() {
-      document.getElementById("editGuruDocId").value = "";
-      document.getElementById("inputNamaManual").value = "";
-
-      const checkboxes = document.querySelectorAll('input[name="workDays"]');
-      checkboxes.forEach(cb => {
-        cb.checked = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].includes(cb.value);
-      });
-
-      document.getElementById("formGuruTitle").innerText = "✏️ Tambah Guru & Hari Kerja";
-      document.getElementById("btnSimpanGuru").innerText = "➕ Simpan Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-success";
-      document.getElementById("btnBatalEdit").style.display = "none";
-    }
-
-    window.resetDeviceGuru = async function(docId, nama) {
-      if (confirm(`Yakin ingin mereset ikatan HP milik guru: "${nama}"?`)) {
-        try {
-          await updateDoc(doc(db, "teachers", docId), { device_id: null });
-          alert(`Berhasil mereset HP guru "${nama}".`);
-          loadDataAwal();
-        } catch(err) {
-          alert("Gagal mereset HP: " + err.message);
-        }
-      }
-    }
-
-    window.hapusGuru = async function(docId, nama) {
-      if (confirm(`Apakah Anda yakin ingin menghapus guru "${nama}"?`)) {
-        try {
-          await deleteDoc(doc(db, "teachers", docId));
-          alert(`Guru "${nama}" berhasil dihapus.`);
-          loadDataAwal();
-        } catch(err) {
-          alert("Gagal menghapus guru: " + err.message);
-        }
-      }
-    }
-
-    function isiDropdownGuru() {
-      const select = document.getElementById("filterGuru");
-      if (!select) return;
-      select.innerHTML = '<option value="">-- Semua Guru --</option>';
-      dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-        select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
-      });
-    }
-
-    window.gantiModeTampilan = function() {
-      const mode = document.getElementById("modeRekap").value;
-      document.getElementById("boxFilterTanggal").style.display = (mode === "harian") ? "block" : "none";
-      document.getElementById("boxFilterBulan").style.display = (mode === "bulanan") ? "block" : "none";
-      document.getElementById("boxFilterGuru").style.display = (mode === "perguru") ? "block" : "none";
-      window.renderLaporan();
-    }
-
-    function isGuruAbsenMatch(record, guru) {
-      if (!record || !guru) return false;
-      if ((record.teacher_id && record.teacher_id === guru.id) ||  
-          (record.guru_id && record.guru_id === guru.id)) {
-        return true;
-      }
-
-      const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
-      const namaGuruDbRaw = guru.name || "";
-
-      const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-      const cleanAbsen = clean(namaAbsenRaw);
-      const cleanGuru = clean(namaGuruDbRaw);
-
-      if (!cleanAbsen || !cleanGuru) return false;
-      return cleanAbsen === cleanGuru;
-    }
-
-    window.renderLaporan = function() {
-      const modeEl = document.getElementById("modeRekap");
-      if (!modeEl) return;
-      const mode = modeEl.value;
-      const tabel = document.getElementById("tabelDinamis");
-
-      if (mode === "harian") {
-        const filterTgl = document.getElementById("filterTanggal").value;
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Tanggal</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-              <th>Status Kehadiran</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        const dataFiltered = dataAbsensiSemua.filter(a => a.date && a.date.startsWith(filterTgl));
-
-        if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="6">Tidak ada data presensi pada tanggal ${filterTgl}</td></tr>`;
-        } else {
-          let no = 1;
-          dataFiltered.forEach(a => {
-            const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || "Tanpa Nama";
-            const jamMasuk = a.check_in_time || a.jam_masuk || "-";
-            const jamPulang = a.check_out_time || a.jam_pulang || "-";
-
-            html += `
-              <tr>
-                <td>${no++}</td>
-                <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
-                <td>${a.date}</td>
-                <td><span class="badge-masuk">${jamMasuk}</span></td>
-                <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
-                <td><span class="status-hadir">Hadir</span></td>
-              </tr>
-            `;
-          });
-        }
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-
-      } else if (mode === "bulanan") {
-        const filterBln = document.getElementById("filterBulan").value;
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Total Kehadiran (Hari)</th>
-              <th>Bulan</th>
-              <th>Persentase</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        let no = 1;
-        dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-          const absensiGuru = dataAbsensiSemua.filter(a => {
-            const isMatchBulan = a.date && a.date.startsWith(filterBln);
-            return isMatchBulan && isGuruAbsenMatch(a, g);
-          });
-
-          const tanggalUnik = new Set(absensiGuru.map(a => a.date));
-          const totalHadir = tanggalUnik.size;
-          const targetHariKerja = 20; 
-          const persen = Math.round((totalHadir / targetHariKerja) * 100);
-
-          html += `
-            <tr>
-              <td>${no++}</td>
-              <td class="nama-guru">${formatNamaRapi(g.name)}</td>
-              <td><strong>${totalHadir} Hari</strong></td>
-              <td>${filterBln}</td>
-              <td><span class="badge-persen">${persen}%</span></td>
-            </tr>
-          `;
-        });
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-
-      } else if (mode === "perguru") {
-        const selectedGuruId = document.getElementById("filterGuru").value;
-        const selectedGuruObj = dataGuruSemua.find(g => g.id === selectedGuruId);
-
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Tanggal</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        const dataFiltered = dataAbsensiSemua.filter(a => {
-          if (!selectedGuruId) return true;
-          return isGuruAbsenMatch(a, selectedGuruObj);
-        });
-
-        if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="5">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
-        } else {
-          let no = 1;
-          dataFiltered.sort((a,b) => (a.date < b.date) ? 1 : -1).forEach(a => {
-            const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || (selectedGuruObj ? selectedGuruObj.name : "Tanpa Nama");
-            const jamMasuk = a.check_in_time || a.jam_masuk || "-";
-            const jamPulang = a.check_out_time || a.jam_pulang || "-";
-
-            html += `
-              <tr>
-                <td>${no++}</td>
-                <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
-                <td>${a.date}</td>
-                <td><span class="badge-masuk">${jamMasuk}</span></td>
-                <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
-              </tr>
-            `;
-          });
-        }
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-      }
-    }
-
-    window.resetFilter = function() {
-      const now = new Date();
-      document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-      document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      document.getElementById("filterGuru").value = "";
-      window.renderLaporan();
-    }
-
-    window.exportKeExcel = function() {
-      const tabel = document.getElementById("tabelDinamis");
-      const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
-      XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-  </script>
-</body>
-</html>
+        return
