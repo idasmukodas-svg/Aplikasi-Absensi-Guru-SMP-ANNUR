@@ -3,229 +3,710 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Presensi - SMP PLUS ANNUUR</title>
-  <!-- Ikon Aplikasi di Pintasan/Tab -->
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2991/2991148.png">
-
-  <!-- CSS & Library Pendukung -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-  <!-- Firebase SDK (Firestore & Core Compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
+  <title>Dashboard Admin Absensi - SMP Terpadu Nusakarya</title>
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .card-header { background-color: #fff; font-weight: bold; border-bottom: 1px solid #eee; border-radius: 10px 10px 0 0 !important; }
-    .nama-guru { font-weight: 600; color: #333; }
-    .badge-masuk { background-color: #d1e7dd; color: #0f5132; padding: 5px 10px; border-radius: 5px; font-weight: 500; }
-    .badge-pulang { background-color: #cfe2ff; color: #084298; padding: 5px 10px; border-radius: 5px; font-weight: 500; }
-    .badge-persen { background-color: #fff3cd; color: #664d03; padding: 5px 10px; border-radius: 5px; font-weight: 500; }
-    .status-hadir { color: #198754; font-weight: 600; }
+    :root {
+      --primary-color: #1b5e20;
+      --primary-light: #2e7d32;
+      --bg-color: #f4f6f9;
+      --text-dark: #333333;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 0;
+      background-color: var(--bg-color); 
+      color: var(--text-dark);
+      scroll-behavior: smooth;
+    }
+
+    /* TOP NAVBAR MENU RESPONSIVE */
+    .navbar {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .navbar-brand {
+      font-size: 16px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+    }
+
+    .menu-toggle {
+      display: none;
+      font-size: 22px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    .navbar-menu {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: 5px;
+    }
+
+    .navbar-menu li a {
+      color: #e8f5e9;
+      text-decoration: none;
+      padding: 12px 14px;
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .navbar-menu li a:hover, .navbar-menu li a.active {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .badge-online {
+      background-color: #4caf50;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 15px;
+    }
+
+    .card { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06); 
+      margin-bottom: 20px; 
+      scroll-margin-top: 70px;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .school-logo {
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #c8e6c9;
+      padding: 3px;
+      background: #fff;
+    }
+    .header-text h1 { margin: 0; font-size: 22px; color: var(--primary-color); }
+    .header-text p { margin: 4px 0 0 0; color: #666; font-size: 14px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border-left: 4px solid var(--primary-light);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .stat-icon {
+      font-size: 28px;
+      background: #e8f5e9;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-info h4 { margin: 0; font-size: 12px; color: #666; text-transform: uppercase; }
+    .stat-info p { margin: 2px 0 0 0; font-size: 20px; font-weight: bold; color: #1b5e20; }
+
+    h2 { color: #333; margin-top: 0; font-size: 18px; }
+    .qr-container { text-align: center; }
+    #qrcode { display: inline-block; padding: 10px; background: white; border: 1px solid #ccc; margin-top: 10px; }
+
+    .grid-2 {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .grid-col {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .form-group { margin-bottom: 10px; }
+    .form-group.full-width { grid-column: span 2; }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #333;
+    }
+
+    .filter-panel {
+      background: #eef2f7;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #dcdfe6;
+      margin-bottom: 20px;
+    }
+    .filter-group {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .form-control {
+      padding: 9px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .btn {
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background-color: #2e7d32; color: white; }
+    .btn-success { background-color: #1b5e20; color: white; }
+    .btn-warning { background-color: #ff9800; color: #fff; padding: 5px 10px; font-size: 12px; }
+    .btn-info { background-color: #0288d1; color: white; padding: 5px 10px; font-size: 12px; }
+    .btn-danger { background-color: #d32f2f; color: white; padding: 5px 10px; font-size: 12px; }
+    .btn-secondary { background-color: #757575; color: white; }
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .status-badge {
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 15px;
+      display: none;
+      font-weight: bold;
+    }
+
+    .day-checkboxes {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+    .day-checkboxes label {
+      font-size: 12px;
+      font-weight: bold;
+      background: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #2e7d32; color: white; }
+    td.nama-guru { text-align: left; font-weight: bold; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+
+    .status-hadir { color: #2e7d32; font-weight: bold; background-color: #e8f5e9; padding: 4px 8px; border-radius: 4px; }
+    .badge-masuk { background-color: #2e7d32; color: white; padding: 3px 6px; border-radius: 4px; }
+    .badge-pulang { background-color: #c62828; color: white; padding: 3px 6px; border-radius: 4px; }
+    .badge-persen { background-color: #1565c0; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+
+    footer {
+      background-color: #1e293b;
+      color: #cbd5e1;
+      padding: 30px 20px 20px 20px;
+      margin-top: 50px;
+      font-size: 13px;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .footer-section h3 {
+      color: #ffffff;
+      font-size: 16px;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .footer-section p {
+      line-height: 1.6;
+      margin: 5px 0;
+    }
+
+    .footer-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .footer-links li {
+      margin-bottom: 8px;
+    }
+
+    .footer-links a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: #ffffff;
+    }
+
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 20px auto 0 auto;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+    }
+
+    .footer-bottom strong { color: #4ade80; }
+
+    @media (max-width: 768px) {
+      .navbar { flex-wrap: wrap; padding: 10px 15px; }
+      .menu-toggle { display: block; }
+      .navbar-user { display: none; }
+      
+      .navbar-menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        margin-top: 10px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 5px;
+      }
+
+      .navbar-menu.show {
+        display: flex;
+      }
+
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full-width { grid-column: span 1; }
+    }
   </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
-    <div class="container">
-      <a class="navbar-brand fw-bold" href="#">🏫 Admin Presensi - SMP PLUS ANNUUR</a>
+  <!-- HEADER NAVBAR MENU -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <span>🏫</span> E-Admin Absensi
+    </div>
+    
+    <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()">☰</button>
+
+    <ul class="navbar-menu" id="navbarMenu">
+      <li><a href="#sec-dashboard" class="nav-link active">Dashboard</a></li>
+      <li><a href="#sec-lokasi" class="nav-link">Lokasi & Radius</a></li>
+      <li><a href="#sec-qrcode" class="nav-link">QR Code</a></li>
+      <li><a href="#sec-guru" class="nav-link">Master Guru</a></li>
+      <li><a href="#sec-rekap" class="nav-link">Rekapitulasi</a></li>
+    </ul>
+
+    <div class="navbar-user">
+      <span class="badge-online">● Online</span>
+      <span style="opacity: 0.8;">| Kepala Sekolah</span>
     </div>
   </nav>
 
-  <div class="container my-4">
-    <!-- Pesan Admin Alert -->
-    <div id="adminMsg" class="alert" style="display: none;" role="alert"></div>
+  <div class="container">
 
-    <!-- Statistik Ringkas -->
-    <div class="row text-center mb-4">
-      <div class="col-md-4">
-        <div class="card p-3 bg-white">
-          <h6 class="text-muted">Total Guru Terdaftar</h6>
-          <h3 id="statTotalGuru" class="fw-bold text-success">0</h3>
+    <!-- Card Dashboard Header -->
+    <div class="card header-container" id="sec-dashboard">
+      <img src="logo.jpeg" alt="Logo SMP Terpadu Nusakarya" class="school-logo" 
+           onerror="if (this.src.endsWith('logo.jpeg')) { this.src='logo.jpg'; } else if (this.src.endsWith('logo.jpg')) { this.src='logo.png'; }">
+      <div class="header-text">
+        <h1>SMP Terpadu Nusakarya</h1>
+        <p>Sistem E-Admin Presensi & Rekapitulasi Kehadiran Guru Harian berbasis GPS</p>
+      </div>
+    </div>
+
+    <!-- Ringkasan Statistik -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <h4>Total Guru</h4>
+          <p id="statTotalGuru">0</p>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card p-3 bg-white">
-          <h6 class="text-muted">Hadir Hari Ini</h6>
-          <h3 id="statHadirHariIni" class="fw-bold text-primary">0</h3>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <h4>Hadir Hari Ini</h4>
+          <p id="statHadirHariIni">0</p>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card p-3 bg-white">
-          <h6 class="text-muted">Perangkat HP Terikat</h6>
-          <h3 id="statHpTerikat" class="fw-bold text-info">0</h3>
+      <div class="stat-card">
+        <div class="stat-icon">📱</div>
+        <div class="stat-info">
+          <h4>HP Terikat</h4>
+          <p id="statHpTerikat">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📍</div>
+        <div class="stat-info">
+          <h4>Radius GPS</h4>
+          <p id="statRadiusDisplay">50 m</p>
         </div>
       </div>
     </div>
 
-    <!-- Pengaturan Lokasi & Radius Sekolah -->
-    <div class="card">
-      <div class="card-header">📍 Pengaturan Titik GPS & Radius Sekolah</div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Latitude Sekolah</label>
-            <input type="text" id="inputLat" class="form-control" placeholder="Contoh: -6.200000">
+    <!-- MODUL PENGATURAN LOKASI & RADIUS SEKOLAH -->
+    <div class="card" id="sec-lokasi">
+      <h2 style="color: #1b5e20; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">📍 Pengaturan Titik Lokasi & Radius Sekolah</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inputLat">Latitude Sekolah:</label>
+          <input type="text" id="inputLat" class="form-control" value="-7.345545" placeholder="-7.345545">
+        </div>
+        
+        <div class="form-group">
+          <label for="inputLng">Longitude Sekolah:</label>
+          <input type="text" id="inputLng" class="form-control" value="108.057451" placeholder="108.057451">
+        </div>
+
+        <div class="form-group full-width">
+          <label for="inputRadius">Batas Radius Maksimal Absensi (Meter):</label>
+          <input type="number" id="inputRadius" class="form-control" value="50" placeholder="50">
+          <small style="color: #666; font-size: 11px; margin-top: 4px; display: block;">
+            * Guru hanya dapat melakukan absensi jika posisi GPS berada dalam jarak radius ini dari lokasi sekolah.
+          </small>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+        <button class="btn btn-info" onclick="ambilLokasiSaatIni()">
+          📍 Ambil Lokasi Saya Sekarang
+        </button>
+        <button class="btn btn-primary" onclick="simpanPengaturanLokasi()">
+          💾 Simpan Pengaturan Lokasi & Radius
+        </button>
+      </div>
+
+      <div id="adminMsg" class="status-badge"></div>
+    </div>
+
+    <!-- QR Code Card -->
+    <div class="card qr-container" id="sec-qrcode">
+      <h2>QR Code Absensi Utama Sekolah</h2>
+      <p style="font-size: 12px; color: #666; margin-top: -5px;">Cetak atau tampilkan QR Code ini di gerbang / ruang piket agar di-scan oleh guru</p>
+      <div id="qrcode"></div>
+    </div>
+
+    <!-- Modul Master Data Guru -->
+    <div class="card" id="sec-guru">
+      <h2>1. Kelola Master Data & Hari Kerja Guru</h2>
+      <div class="grid-2">
+        
+        <div class="grid-col" style="border: 2px dashed #2e7d32; background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+          <h3 style="margin-top:0; font-size: 15px; color: #1b5e20;">📁 Import dari File Excel (.xlsx)</h3>
+          <input type="file" id="excelFile" accept=".xlsx, .xls" class="form-control" style="margin-bottom: 10px;">
+          <button onclick="prosesUploadMasterGuru()" class="btn btn-primary" style="width: 100%; justify-content: center;">🚀 Import File Excel</button>
+          <p style="font-size: 11px; color: #666; margin-top: 8px; margin-bottom: 0;">Kolom pertama: <strong>Nama Guru</strong></p>
+        </div>
+
+        <div class="grid-col" style="border: 1px solid #c8e6c9; background: #e8f5e9; padding: 15px; border-radius: 8px;">
+          <h3 id="formGuruTitle" style="margin-top:0; font-size: 15px; color: #1b5e20;">✏️ Tambah Guru & Hari Kerja</h3>
+          
+          <input type="hidden" id="editGuruDocId" value="">
+          <input type="text" id="inputNamaManual" class="form-control" placeholder="Ketik Nama Lengkap Guru..." style="margin-bottom: 8px;">
+          
+          <label style="font-size: 12px; font-weight: bold; color: #333;">Pilih Hari Kerja Guru:</label>
+          <div class="day-checkboxes">
+            <label><input type="checkbox" name="workDays" value="Senin" checked> Senin</label>
+            <label><input type="checkbox" name="workDays" value="Selasa" checked> Selasa</label>
+            <label><input type="checkbox" name="workDays" value="Rabu" checked> Rabu</label>
+            <label><input type="checkbox" name="workDays" value="Kamis" checked> Kamis</label>
+            <label><input type="checkbox" name="workDays" value="Jumat" checked> Jumat</label>
+            <label><input type="checkbox" name="workDays" value="Sabtu"> Sabtu</label>
           </div>
-          <div class="col-md-4">
-            <label class="form-label">Longitude Sekolah</label>
-            <input type="text" id="inputLng" class="form-control" placeholder="Contoh: 106.816666">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Radius (Meter)</label>
-            <input type="number" id="inputRadius" class="form-control" placeholder="Contoh: 50">
-          </div>
-          <div class="col-md-1 d-flex align-items-end">
-            <button class="btn btn-success w-100" onclick="simpanPengaturanLokasi()">💾 Simpan</button>
+
+          <div style="display: flex; gap: 8px;">
+            <button id="btnSimpanGuru" onclick="simpanAtauUpdateGuru()" class="btn btn-success" style="flex: 1; justify-content: center;">➕ Simpan Guru</button>
+            <button id="btnBatalEdit" onclick="batalEditGuru()" class="btn btn-secondary" style="display: none; justify-content: center;">❌ Batal</button>
           </div>
         </div>
-        <small class="text-muted mt-2 d-block">Radius saat ini: <span id="statRadiusDisplay" class="fw-bold">Memuat...</span></small>
+
+      </div>
+
+      <h3 style="margin-top: 20px; font-size: 15px; color: #333;">Daftar Guru & Hari Kerja Terdaftar:</h3>
+      <div style="max-height: 250px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">No</th>
+              <th>Nama Lengkap Guru</th>
+              <th>Hari Kerja Terdaftar</th>
+              <th style="width: 170px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tabel-master-guru">
+            <tr><td colspan="4">Memuat daftar guru...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- Master Data Guru & Hari Kerja -->
-    <div class="row">
-      <div class="col-md-5">
-        <div class="card">
-          <div class="card-header" id="formGuruTitle">✏️ Tambah Guru & Hari Kerja</div>
-          <div class="card-body">
-            <input type="hidden" id="editGuruDocId">
-            <div class="mb-3">
-              <label class="form-label">Nama Lengkap & Gelar</label>
-              <input type="text" id="inputNamaManual" class="form-control" placeholder="Contoh: Ahmad, S.Pd.">
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Hari Kerja Aktif:</label>
-              <div class="row">
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Senin" checked id="d1"><label class="form-check-label" for="d1">Senin</label></div></div>
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Selasa" checked id="d2"><label class="form-check-label" for="d2">Selasa</label></div></div>
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Rabu" checked id="d3"><label class="form-check-label" for="d3">Rabu</label></div></div>
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Kamis" checked id="d4"><label class="form-check-label" for="d4">Kamis</label></div></div>
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Jumat" checked id="d5"><label class="form-check-label" for="d5">Jumat</label></div></div>
-                <div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="workDays" value="Sabtu" id="d6"><label class="form-check-label" for="d6">Sabtu</label></div></div>
-              </div>
-            </div>
-            <button id="btnSimpanGuru" class="btn btn-success w-100 mb-2" onclick="simpanAtauUpdateGuru()">➕ Simpan Guru</button>
-            <button id="btnBatalEdit" class="btn btn-secondary w-100" style="display: none;" onclick="batalEditGuru()">❌ Batal</button>
-            
-            <hr class="my-4">
-            
-            <label class="form-label fw-bold">📥 Import Master Guru via Excel (.xlsx)</label>
-            <input type="file" id="excelFile" class="form-control mb-2" accept=".xlsx, .xls">
-            <button class="btn btn-outline-success w-100" onclick="prosesUploadMasterGuru()">📂 Upload & Import Excel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabel Daftar Guru -->
-      <div class="col-md-7">
-        <div class="card">
-          <div class="card-header">📋 Daftar Guru SMP PLUS ANNUUR</div>
-          <div class="card-body">
-            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
-              <table class="table table-hover align-middle">
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Nama Guru</th>
-                    <th>Hari Kerja</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="tabel-master-guru">
-                  <tr><td colspan="4" class="text-center">Memuat data...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Rekapitulasi & Laporan Presensi -->
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span>📊 Rekapitulasi Laporan Presensi</span>
-        <button class="btn btn-outline-success btn-sm" onclick="exportKeExcel()">📥 Export ke Excel</button>
-      </div>
-      <div class="card-body">
-        <div class="row g-3 mb-3">
-          <div class="col-md-3">
-            <label class="form-label">Mode Rekap</label>
-            <select id="modeRekap" class="form-select" onchange="gantiModeTampilan()">
-              <option value="harian">Harian</option>
-              <option value="bulanan">Bulanan</option>
-              <option value="perguru">Per Guru</option>
+    <!-- Central Filter & Report Card -->
+    <div class="card" id="sec-rekap">
+      <h2>2. Rekapitulasi Absensi & Persentase Kehadiran Guru</h2>
+      
+      <div class="filter-panel">
+        <div class="filter-group">
+          <div>
+            <label><strong>Pilih Mode Rekap:</strong></label><br>
+            <select id="modeRekap" class="form-control" onchange="gantiModeTampilan()" style="font-weight: bold; color: #2e7d32; width: auto;">
+              <option value="harian">📅 Rekap Presensi Per-Hari</option>
+              <option value="bulanan">📊 Rekap Persentase Kehadiran Bulanan</option>
+              <option value="perguru">👤 Rekap Per-Guru Spesifik</option>
             </select>
           </div>
-          <div class="col-md-3" id="boxFilterTanggal">
-            <label class="form-label">Pilih Tanggal</label>
-            <input type="date" id="filterTanggal" class="form-control" onchange="renderLaporan()">
+
+          <div id="boxFilterTanggal">
+            <label><strong>Pilih Tanggal:</strong></label><br>
+            <input type="date" id="filterTanggal" class="form-control" onchange="renderLaporan()" style="width: auto;">
           </div>
-          <div class="col-md-3" id="boxFilterBulan" style="display: none;">
-            <label class="form-label">Pilih Bulan</label>
-            <input type="month" id="filterBulan" class="form-control" onchange="renderLaporan()">
+
+          <div id="boxFilterBulan" style="display: none;">
+            <label><strong>Pilih Bulan:</strong></label><br>
+            <input type="month" id="filterBulan" class="form-control" onchange="renderLaporan()" style="width: auto;">
           </div>
-          <div class="col-md-4" id="boxFilterGuru" style="display: none;">
-            <label class="form-label">Pilih Guru</label>
-            <select id="filterGuru" class="form-select" onchange="renderLaporan()">
+
+          <div id="boxFilterGuru" style="display: none;">
+            <label><strong>Pilih Guru:</strong></label><br>
+            <select id="filterGuru" class="form-control" onchange="renderLaporan()" style="width: auto;">
               <option value="">-- Semua Guru --</option>
             </select>
           </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-outline-secondary w-100" onclick="resetFilter()">Reset Filter</button>
+
+          <div style="margin-top: 18px; display: flex; gap: 8px;">
+            <button class="btn btn-primary" onclick="resetFilter()">🔄 Reset</button>
+            <button class="btn btn-success" onclick="exportKeExcel()">📊 Export Excel</button>
           </div>
         </div>
+      </div>
 
-        <div class="table-responsive">
-          <table class="table table-striped align-middle" id="tabelDinamis">
-            <!-- Dinamis Tabel diisi JavaScript -->
-          </table>
-        </div>
+      <!-- Area Tabel Dinamis -->
+      <div style="overflow-x: auto;">
+        <table id="tabelDinamis"></table>
       </div>
     </div>
+
   </div>
 
-  <!-- SCRIPT KODE LENGKAP -->
-  <script>
-    // Konfigurasi Firebase Anda
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+  <footer>
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>SMP Terpadu Nusakarya</h3>
+        <p>Sistem E-Admin Presensi Digital berbasis Geolocation (GPS) dan QR Code khusus Guru dan Tenaga Kependidikan.</p>
+      </div>
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+      <div class="footer-section">
+        <h3>Akses Cepat Menu</h3>
+        <ul class="footer-links">
+          <li><a href="#sec-lokasi">📍 Pengaturan Titik GPS & Radius</a></li>
+          <li><a href="#sec-qrcode">🔲 QR Code Absensi Utama</a></li>
+          <li><a href="#sec-guru">👥 Kelola Data & Hari Kerja Guru</a></li>
+          <li><a href="#sec-rekap">📊 Rekapitulasi & Export Excel</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3>Bantuan & Status</h3>
+        <p><strong>Database:</strong> Google Firebase Firestore</p>
+        <p><strong>Status Server:</strong> <span style="color: #4ade80;">Normal / Online</span></p>
+        <p><strong>Versi Sistem:</strong> v2.4 (Terintegrasi GPS Validation)</p>
+      </div>
+
+      <div class="footer-section">
+        <h3>👨‍💻 Pengembang Sistem</h3>
+        <p><strong>Developer:</strong> Idas</p>
+        <p><strong>Instansi/Unit:</strong> TRIHIRA Studio & Tech Support</p>
+        <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+          Dikembangkan untuk mendukung efisiensi operasional dan rekapitulasi kehadiran pendidik di SMP Terpadu Nusakarya.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      E-Admin Absensi Guru &copy; 2026 | <strong>SMP Terpadu Nusakarya</strong>. Developed by <strong>Idas</strong>.
+    </div>
+  </footer>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById("navbarMenu");
+      menu.classList.toggle("show");
     }
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        
+        const menu = document.getElementById("navbarMenu");
+        if (menu.classList.contains("show")) {
+          menu.classList.remove("show");
+        }
+      });
+    });
+
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
+  authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
+  databaseURL: "https://absensi-guru-smp-annuur-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "absensi-guru-smp-annuur",
+  storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
+  messagingSenderId: "423524830410",
+  appId: "1:423524830410:web:415914902d5fcdbcd87833"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    new QRCode(document.getElementById("qrcode"), { text: "QR_NUSAKARYA_UTAMA", width: 160, height: 160 });
 
     let dataGuruSemua = [];
     let dataAbsensiSemua = [];
 
-    // Set default tanggal hari ini pada filter
+    const DEFAULT_LAT = -7.345545;
+    const DEFAULT_LNG = 108.057451;
+    const DEFAULT_RADIUS = 50;
+
     const now = new Date();
     document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
     document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     function loadPengaturanSekolah() {
-      db.collection("settings").doc("school_location").get().then(doc => {
+      db.collection("settings").doc("school_location").get().then((doc) => {
         if (doc.exists) {
           const data = doc.data();
-          document.getElementById("inputLat").value = data.latitude || "";
-          document.getElementById("inputLng").value = data.longitude || "";
-          document.getElementById("inputRadius").value = data.radius_meters || "";
-          document.getElementById("statRadiusDisplay").innerText = (data.radius_meters || 0) + " m";
+          const lat = data.latitude !== undefined ? data.latitude : DEFAULT_LAT;
+          const lng = data.longitude !== undefined ? data.longitude : DEFAULT_LNG;
+          const rad = data.radius_meters !== undefined ? data.radius_meters : DEFAULT_RADIUS;
+
+          document.getElementById("inputLat").value = lat;
+          document.getElementById("inputLng").value = lng;
+          document.getElementById("inputRadius").value = rad;
+          document.getElementById("statRadiusDisplay").innerText = rad + " m";
+        } else {
+          document.getElementById("inputLat").value = DEFAULT_LAT;
+          document.getElementById("inputLng").value = DEFAULT_LNG;
+          document.getElementById("inputRadius").value = DEFAULT_RADIUS;
+          document.getElementById("statRadiusDisplay").innerText = DEFAULT_RADIUS + " m";
         }
       }).catch(err => {
-        console.error("Gagal memuat pengaturan lokasi:", err);
+        tampilkanPesanAdmin("Gagal memuat pengaturan lokasi: " + err.message, false);
       });
+    }
+
+    function ambilLokasiSaatIni() {
+      if (!navigator.geolocation) {
+        alert("Browser Anda tidak mendukung fitur Geolocation GPS.");
+        return;
+      }
+
+      tampilkanPesanAdmin("⏳ Mengambil titik koordinat GPS Anda...", true);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById("inputLat").value = pos.coords.latitude;
+          document.getElementById("inputLng").value = pos.coords.longitude;
+          tampilkanPesanAdmin("✅ Titik GPS saat ini berhasil diambil!", true);
+        },
+        (err) => {
+          tampilkanPesanAdmin("❌ Gagal mengambil GPS: " + err.message, false);
+        },
+        { enableHighAccuracy: true }
+      );
     }
 
     function simpanPengaturanLokasi() {
@@ -314,7 +795,7 @@
         let count = 0;
         const defaultDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-        jsonData.forEach((row) => {
+        jsonData.forEach((row, index) => {
           if (row.length > 0 && row[0]) {
             const namaGuru = formatNamaRapi(String(row[0]));
             if (namaGuru && namaGuru.toLowerCase() !== "nama" && namaGuru.toLowerCase() !== "nama guru") {
@@ -348,7 +829,7 @@
     function renderTabelMasterGuru() {
       const tbody = document.getElementById("tabel-master-guru");
       if (dataGuruSemua.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Belum ada nama guru terdaftar.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4">Belum ada nama guru terdaftar.</td></tr>';
         return;
       }
 
@@ -367,9 +848,9 @@
             </td>
             <td><small>${hariStr}</small></td>
             <td>
-              <button class="btn btn-warning btn-sm" onclick="editGuru('${g.id}')">✏️ Edit</button>
-              ${hasDevice ? `<button class="btn btn-info btn-sm text-white" onclick="resetDeviceGuru('${g.id}', '${g.name}')">🔄 Reset HP</button>` : ''}
-              <button class="btn btn-danger btn-sm" onclick="hapusGuru('${g.id}', '${g.name}')">🗑️ Hapus</button>
+              <button class="btn btn-warning" onclick="editGuru('${g.id}')">✏️ Edit</button>
+              ${hasDevice ? `<button class="btn btn-info" onclick="resetDeviceGuru('${g.id}', '${g.name}')">🔄 Reset HP</button>` : ''}
+              <button class="btn btn-danger" onclick="hapusGuru('${g.id}', '${g.name}')">🗑️ Hapus</button>
             </td>
           </tr>
         `;
@@ -432,8 +913,8 @@
 
       document.getElementById("formGuruTitle").innerText = "✏️ Edit Data Guru";
       document.getElementById("btnSimpanGuru").innerText = "💾 Update Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-primary w-100 mb-2";
-      document.getElementById("btnBatalEdit").style.display = "block";
+      document.getElementById("btnSimpanGuru").className = "btn btn-primary";
+      document.getElementById("btnBatalEdit").style.display = "inline-block";
 
       document.getElementById("formGuruTitle").scrollIntoView({ behavior: 'smooth' });
     }
@@ -449,7 +930,7 @@
 
       document.getElementById("formGuruTitle").innerText = "✏️ Tambah Guru & Hari Kerja";
       document.getElementById("btnSimpanGuru").innerText = "➕ Simpan Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-success w-100 mb-2";
+      document.getElementById("btnSimpanGuru").className = "btn btn-success";
       document.getElementById("btnBatalEdit").style.display = "none";
     }
 
@@ -487,17 +968,21 @@
       renderLaporan();
     }
 
+    // PENCOCOKAN PERSISI BERDASARKAN USER_NAME & FIELDFORM
     function isGuruAbsenMatch(record, guru) {
       if (!record || !guru) return false;
 
-      if ((record.teacher_id && record.teacher_id === guru.id) ||  
+      // 1. Cek jika ada ID Guru
+      if ((record.teacher_id && record.teacher_id === guru.id) || 
           (record.guru_id && record.guru_id === guru.id)) {
         return true;
       }
 
+      // 2. Baca field user_name, teacher_name, nama_guru, atau nama
       const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
       const namaGuruDbRaw = guru.name || "";
 
+      // Normalisasi string (hapus karakter selain huruf/angka dan ubah ke lowercase)
       const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 
       const cleanAbsen = clean(namaAbsenRaw);
@@ -531,7 +1016,7 @@
         const dataFiltered = dataAbsensiSemua.filter(a => a.date && a.date.startsWith(filterTgl));
 
         if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="6" class="text-center">Tidak ada data presensi pada tanggal ${filterTgl}</td></tr>`;
+          html += `<tr><td colspan="6">Tidak ada data presensi pada tanggal ${filterTgl}</td></tr>`;
         } else {
           let no = 1;
           dataFiltered.forEach(a => {
@@ -617,7 +1102,7 @@
         });
 
         if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="5" class="text-center">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
+          html += `<tr><td colspan="5">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
         } else {
           let no = 1;
           dataFiltered.sort((a,b) => (a.date < b.date) ? 1 : -1).forEach(a => {
@@ -652,7 +1137,7 @@
     function exportKeExcel() {
       const tabel = document.getElementById("tabelDinamis");
       const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
-      XLSX.writeFile(wb, `Rekap_Absensi_Guru_SMP_Plus_Annuur_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
   </script>
 </body>
