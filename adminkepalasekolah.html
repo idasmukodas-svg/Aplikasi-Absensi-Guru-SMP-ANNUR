@@ -630,29 +630,30 @@
       });
     });
 <script type="module">
-  import { initializeApp } from "firebase/app";
-    // Import the functions you need from the SDKs you need
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    import { initializeApp } from "firebase/app";
+    import { getFirestore, collection, doc, getDoc, setDoc, getDocs, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
-  authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
-  databaseURL: "https://absensi-guru-smp-annuur-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "absensi-guru-smp-annuur",
-  storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
-  messagingSenderId: "423524830410",
-  appId: "1:423524830410:web:415914902d5fcdbcd87833"
-};
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQRPtPcDQLLWIU-r6zhYP9ItiNVZGDISY",
+      authDomain: "absensi-guru-smp-annuur.firebaseapp.com",
+      databaseURL: "https://absensi-guru-smp-annuur-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "absensi-guru-smp-annuur",
+      storageBucket: "absensi-guru-smp-annuur.firebasestorage.app",
+      messagingSenderId: "423524830410",
+      appId: "1:423524830410:web:415914902d5fcdbcd87833"
+    };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Ekspos fungsi Firestore & Database ke window agar helper lama tetap kompatibel
+    window.db = db;
 
-    new QRCode(document.getElementById("qrcode"), { text: "QR_NUSAKARYA_UTAMA", width: 160, height: 160 });
+    try {
+      new QRCode(document.getElementById("qrcode"), { text: "QR_NUSAKARYA_UTAMA", width: 160, height: 160 });
+    } catch(e) { console.log("QR Code element not found"); }
 
     let dataGuruSemua = [];
     let dataAbsensiSemua = [];
@@ -662,13 +663,17 @@ const app = initializeApp(firebaseConfig);
     const DEFAULT_RADIUS = 50;
 
     const now = new Date();
-    document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-    document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const elTgl = document.getElementById("filterTanggal");
+    const elBln = document.getElementById("filterBulan");
+    if (elTgl) elTgl.value = now.toISOString().split('T')[0];
+    if (elBln) elBln.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    function loadPengaturanSekolah() {
-      db.collection("settings").doc("school_location").get().then((doc) => {
-        if (doc.exists) {
-          const data = doc.data();
+    async function loadPengaturanSekolah() {
+      try {
+        const docRef = doc(db, "settings", "school_location");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
           const lat = data.latitude !== undefined ? data.latitude : DEFAULT_LAT;
           const lng = data.longitude !== undefined ? data.longitude : DEFAULT_LNG;
           const rad = data.radius_meters !== undefined ? data.radius_meters : DEFAULT_RADIUS;
@@ -676,19 +681,21 @@ const app = initializeApp(firebaseConfig);
           document.getElementById("inputLat").value = lat;
           document.getElementById("inputLng").value = lng;
           document.getElementById("inputRadius").value = rad;
-          document.getElementById("statRadiusDisplay").innerText = rad + " m";
+          const statDisplay = document.getElementById("statRadiusDisplay");
+          if (statDisplay) statDisplay.innerText = rad + " m";
         } else {
           document.getElementById("inputLat").value = DEFAULT_LAT;
           document.getElementById("inputLng").value = DEFAULT_LNG;
           document.getElementById("inputRadius").value = DEFAULT_RADIUS;
-          document.getElementById("statRadiusDisplay").innerText = DEFAULT_RADIUS + " m";
+          const statDisplay = document.getElementById("statRadiusDisplay");
+          if (statDisplay) statDisplay.innerText = DEFAULT_RADIUS + " m";
         }
-      }).catch(err => {
+      } catch (err) {
         tampilkanPesanAdmin("Gagal memuat pengaturan lokasi: " + err.message, false);
-      });
+      }
     }
 
-    function ambilLokasiSaatIni() {
+    window.ambilLokasiSaatIni = function() {
       if (!navigator.geolocation) {
         alert("Browser Anda tidak mendukung fitur Geolocation GPS.");
         return;
@@ -709,7 +716,7 @@ const app = initializeApp(firebaseConfig);
       );
     }
 
-    function simpanPengaturanLokasi() {
+    window.simpanPengaturanLokasi = async function() {
       const lat = parseFloat(document.getElementById("inputLat").value);
       const lng = parseFloat(document.getElementById("inputLng").value);
       const radius = parseInt(document.getElementById("inputRadius").value);
@@ -719,21 +726,26 @@ const app = initializeApp(firebaseConfig);
         return;
       }
 
-      db.collection("settings").doc("school_location").set({
-        latitude: lat,
-        longitude: lng,
-        radius_meters: radius,
-        updated_at: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).then(() => {
-        document.getElementById("statRadiusDisplay").innerText = radius + " m";
-        tampilkanPesanAdmin(`✅ Berhasil menyimpan pengaturan! Titik: (${lat}, ${lng}) | Radius: ${radius} Meter`, true);
-      }).catch(err => {
+      try {
+        const docRef = doc(db, "settings", "school_location");
+        await setDoc(docRef, {
+          latitude: lat,
+          longitude: lng,
+          radius_meters: radius,
+          updated_at: serverTimestamp()
+        }, { merge: true });
+
+        const statDisplay = document.getElementById("statRadiusDisplay");
+        if (statDisplay) statDisplay.innerText = radius + " m";
+        tampilkanPesanAdmin(`✅ Berhasil menyimpan pengaturan! Titik: (${lat}, ${lng}) \vert{} Radius:${radius} Meter`, true);
+      } catch (err) {
         tampilkanPesanAdmin("❌ Gagal menyimpan pengaturan: " + err.message, false);
-      });
+      }
     }
 
     function tampilkanPesanAdmin(teks, isSuccess) {
       const msg = document.getElementById("adminMsg");
+      if (!msg) return;
       msg.innerText = teks;
       msg.style.display = "block";
       msg.style.background = isSuccess ? "#e8f5e9" : "#ffebee";
@@ -741,12 +753,14 @@ const app = initializeApp(firebaseConfig);
       msg.style.border = isSuccess ? "1px solid #c8e6c9" : "1px solid #ffcdd2";
     }
 
-    function loadDataAwal() {
-      loadPengaturanSekolah();
-      Promise.all([
-        db.collection("teachers").get(),
-        db.collection("attendances").get()
-      ]).then(([teachersSnap, attendancesSnap]) => {
+    async function loadDataAwal() {
+      await loadPengaturanSekolah();
+      try {
+        const [teachersSnap, attendancesSnap] = await Promise.all([
+          getDocs(collection(db, "teachers")),
+          getDocs(collection(db, "attendances"))
+        ]);
+        
         dataGuruSemua = teachersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         dataAbsensiSemua = attendancesSnap.docs.map(doc => doc.data());
         
@@ -754,20 +768,28 @@ const app = initializeApp(firebaseConfig);
         renderTabelMasterGuru();
         isiDropdownGuru();
         renderLaporan();
-      }).catch(err => {
+      } catch (err) {
         console.error("Gagal memuat data awal:", err);
-      });
+      }
     }
 
     loadDataAwal();
 
     function updateKartuStatistik() {
       const tglHariIni = new Date().toISOString().split('T')[0];
-      document.getElementById("statTotalGuru").innerText = dataGuruSemua.length;
-      const hadirHariIni = dataAbsensiSemua.filter(a => a.date === tglHariIni && a.check_in_time && a.check_in_time !== "-").length;
-      document.getElementById("statHadirHariIni").innerText = hadirHariIni;
-      const hpTerikat = dataGuruSemua.filter(g => g.device_id).length;
-      document.getElementById("statHpTerikat").innerText = hpTerikat;
+      const elTotal = document.getElementById("statTotalGuru");
+      const elHadir = document.getElementById("statHadirHariIni");
+      const elHp = document.getElementById("statHpTerikat");
+
+      if (elTotal) elTotal.innerText = dataGuruSemua.length;
+      if (elHadir) {
+        const hadirHariIni = dataAbsensiSemua.filter(a => a.date === tglHariIni && a.check_in_time && a.check_in_time !== "-").length;
+        elHadir.innerText = hadirHariIni;
+      }
+      if (elHp) {
+        const hpTerikat = dataGuruSemua.filter(g => g.device_id).length;
+        elHp.innerText = hpTerikat;
+      }
     }
 
     function formatNamaRapi(str) {
@@ -775,36 +797,35 @@ const app = initializeApp(firebaseConfig);
       return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ').trim();
     }
 
-    function prosesUploadMasterGuru() {
+    window.prosesUploadMasterGuru = function() {
       const fileInput = document.getElementById("excelFile");
-      const file = fileInput.files[0];
-
-      if (!file) {
+      if (!fileInput || !fileInput.files[0]) {
         alert("Silakan pilih file Excel (.xlsx) terlebih dahulu!");
         return;
       }
 
+      const file = fileInput.files[0];
       const reader = new FileReader();
-      reader.onload = function (e) {
+      reader.onload = async function (e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
-        let batch = db.batch();
+        let batch = writeBatch(db);
         let count = 0;
         const defaultDays = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
 
-        jsonData.forEach((row, index) => {
+        jsonData.forEach((row) => {
           if (row.length > 0 && row[0]) {
             const namaGuru = formatNamaRapi(String(row[0]));
             if (namaGuru && namaGuru.toLowerCase() !== "nama" && namaGuru.toLowerCase() !== "nama guru") {
-              const docRef = db.collection("teachers").doc();
+              const docRef = doc(collection(db, "teachers"));
               batch.set(docRef, {
                 name: namaGuru,
                 work_days: defaultDays,
                 device_id: null,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                timestamp: serverTimestamp()
               });
               count++;
             }
@@ -812,13 +833,14 @@ const app = initializeApp(firebaseConfig);
         });
 
         if (count > 0) {
-          batch.commit().then(() => {
+          try {
+            await batch.commit();
             alert(`Berhasil mengimport ${count} data guru dari file Excel!`);
             fileInput.value = "";
             loadDataAwal();
-          }).catch(err => {
+          } catch (err) {
             alert("Gagal mengimport data: " + err.message);
-          });
+          }
         } else {
           alert("Tidak ada data nama guru yang valid ditemukan di file Excel.");
         }
@@ -828,6 +850,8 @@ const app = initializeApp(firebaseConfig);
 
     function renderTabelMasterGuru() {
       const tbody = document.getElementById("tabel-master-guru");
+      if (!tbody) return;
+
       if (dataGuruSemua.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4">Belum ada nama guru terdaftar.</td></tr>';
         return;
@@ -843,8 +867,7 @@ const app = initializeApp(firebaseConfig);
           <tr>
             <td>${no++}</td>
             <td class="nama-guru">
-              ${formatNamaRapi(g.name)}
-              ${hasDevice ? '<br><small style="color: #2e7d32; font-weight: normal;">📱 HP Terikat</small>' : ''}
+              ${formatNamaRapi(g.name)}${hasDevice ? '<br><small style="color: #2e7d32; font-weight: normal;">📱 HP Terikat</small>' : ''}
             </td>
             <td><small>${hariStr}</small></td>
             <td>
@@ -857,7 +880,7 @@ const app = initializeApp(firebaseConfig);
       });
     }
 
-    function simpanAtauUpdateGuru() {
+    window.simpanAtauUpdateGuru = async function() {
       const docId = document.getElementById("editGuruDocId").value;
       const namaInput = document.getElementById("inputNamaManual").value.trim();
       
@@ -876,30 +899,30 @@ const app = initializeApp(firebaseConfig);
 
       const namaRapi = formatNamaRapi(namaInput);
 
-      if (docId) {
-        db.collection("teachers").doc(docId).update({
-          name: namaRapi,
-          work_days: selectedDays
-        }).then(() => {
+      try {
+        if (docId) {
+          await updateDoc(doc(db, "teachers", docId), {
+            name: namaRapi,
+            work_days: selectedDays
+          });
           alert(`Data guru "${namaRapi}" berhasil diperbarui!`);
-          batalEditGuru();
-          loadDataAwal();
-        });
-      } else {
-        db.collection("teachers").add({
-          name: namaRapi,
-          work_days: selectedDays,
-          device_id: null,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
+        } else {
+          await addDoc(collection(db, "teachers"), {
+            name: namaRapi,
+            work_days: selectedDays,
+            device_id: null,
+            timestamp: serverTimestamp()
+          });
           alert(`Berhasil menambahkan "${namaRapi}" dengan hari kerja: ${selectedDays.join(', ')}`);
-          batalEditGuru();
-          loadDataAwal();
-        });
+        }
+        window.batalEditGuru();
+        loadDataAwal();
+      } catch (err) {
+        alert("Gagal menyimpan data guru: " + err.message);
       }
     }
 
-    function editGuru(docId) {
+    window.editGuru = function(docId) {
       const g = dataGuruSemua.find(item => item.id === docId);
       if (!g) return;
 
@@ -911,7 +934,7 @@ const app = initializeApp(firebaseConfig);
         cb.checked = g.work_days ? g.work_days.includes(cb.value) : false;
       });
 
-      document.getElementById("formGuruTitle").innerText = "✏️ Edit Data Guru";
+      document.getElementById("formGuruTitle").innerText = "✏️️ Edit Data Guru";
       document.getElementById("btnSimpanGuru").innerText = "💾 Update Guru";
       document.getElementById("btnSimpanGuru").className = "btn btn-primary";
       document.getElementById("btnBatalEdit").style.display = "inline-block";
@@ -919,7 +942,7 @@ const app = initializeApp(firebaseConfig);
       document.getElementById("formGuruTitle").scrollIntoView({ behavior: 'smooth' });
     }
 
-    function batalEditGuru() {
+    window.batalEditGuru = function() {
       document.getElementById("editGuruDocId").value = "";
       document.getElementById("inputNamaManual").value = "";
 
@@ -934,33 +957,40 @@ const app = initializeApp(firebaseConfig);
       document.getElementById("btnBatalEdit").style.display = "none";
     }
 
-    function resetDeviceGuru(docId, nama) {
+    window.resetDeviceGuru = async function(docId, nama) {
       if (confirm(`Yakin ingin mereset ikatan HP milik guru: "${nama}"?`)) {
-        db.collection("teachers").doc(docId).update({ device_id: null }).then(() => {
+        try {
+          await updateDoc(doc(db, "teachers", docId), { device_id: null });
           alert(`Berhasil mereset HP guru "${nama}".`);
           loadDataAwal();
-        });
+        } catch(err) {
+          alert("Gagal mereset HP: " + err.message);
+        }
       }
     }
 
-    function hapusGuru(docId, nama) {
+    window.hapusGuru = async function(docId, nama) {
       if (confirm(`Apakah Anda yakin ingin menghapus guru "${nama}"?`)) {
-        db.collection("teachers").doc(docId).delete().then(() => {
+        try {
+          await deleteDoc(doc(db, "teachers", docId));
           alert(`Guru "${nama}" berhasil dihapus.`);
           loadDataAwal();
-        });
+        } catch(err) {
+          alert("Gagal menghapus guru: " + err.message);
+        }
       }
     }
 
     function isiDropdownGuru() {
       const select = document.getElementById("filterGuru");
+      if (!select) return;
       select.innerHTML = '<option value="">-- Semua Guru --</option>';
       dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
         select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
       });
     }
 
-    function gantiModeTampilan() {
+    window.gantiModeTampilan = function() {
       const mode = document.getElementById("modeRekap").value;
       document.getElementById("boxFilterTanggal").style.display = (mode === "harian") ? "block" : "none";
       document.getElementById("boxFilterBulan").style.display = (mode === "bulanan") ? "block" : "none";
@@ -968,33 +998,28 @@ const app = initializeApp(firebaseConfig);
       renderLaporan();
     }
 
-    // PENCOCOKAN PERSISI BERDASARKAN USER_NAME & FIELDFORM
     function isGuruAbsenMatch(record, guru) {
       if (!record || !guru) return false;
-
-      // 1. Cek jika ada ID Guru
-      if ((record.teacher_id && record.teacher_id === guru.id) || 
+      if ((record.teacher_id && record.teacher_id === guru.id) ||  
           (record.guru_id && record.guru_id === guru.id)) {
         return true;
       }
 
-      // 2. Baca field user_name, teacher_name, nama_guru, atau nama
       const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
       const namaGuruDbRaw = guru.name || "";
 
-      // Normalisasi string (hapus karakter selain huruf/angka dan ubah ke lowercase)
       const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-
       const cleanAbsen = clean(namaAbsenRaw);
       const cleanGuru = clean(namaGuruDbRaw);
 
       if (!cleanAbsen || !cleanGuru) return false;
-
       return cleanAbsen === cleanGuru;
     }
 
-    function renderLaporan() {
-      const mode = document.getElementById("modeRekap").value;
+    window.renderLaporan = function() {
+      const modeEl = document.getElementById("modeRekap");
+      if (!modeEl) return;
+      const mode = modeEl.value;
       const tabel = document.getElementById("tabelDinamis");
 
       if (mode === "harian") {
@@ -1047,98 +1072,3 @@ const app = initializeApp(firebaseConfig);
               <th>No</th>
               <th>Nama Guru</th>
               <th>Total Kehadiran (Hari)</th>
-              <th>Bulan</th>
-              <th>Persentase</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        let no = 1;
-        dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-          const absensiGuru = dataAbsensiSemua.filter(a => {
-            const isMatchBulan = a.date && a.date.startsWith(filterBln);
-            return isMatchBulan && isGuruAbsenMatch(a, g);
-          });
-
-          const tanggalUnik = new Set(absensiGuru.map(a => a.date));
-          const totalHadir = tanggalUnik.size;
-          const targetHariKerja = 20; 
-          const persen = Math.round((totalHadir / targetHariKerja) * 100);
-
-          html += `
-            <tr>
-              <td>${no++}</td>
-              <td class="nama-guru">${formatNamaRapi(g.name)}</td>
-              <td><strong>${totalHadir} Hari</strong></td>
-              <td>${filterBln}</td>
-              <td><span class="badge-persen">${persen}%</span></td>
-            </tr>
-          `;
-        });
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-
-      } else if (mode === "perguru") {
-        const selectedGuruId = document.getElementById("filterGuru").value;
-        const selectedGuruObj = dataGuruSemua.find(g => g.id === selectedGuruId);
-
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Tanggal</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        const dataFiltered = dataAbsensiSemua.filter(a => {
-          if (!selectedGuruId) return true;
-          return isGuruAbsenMatch(a, selectedGuruObj);
-        });
-
-        if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="5">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
-        } else {
-          let no = 1;
-          dataFiltered.sort((a,b) => (a.date < b.date) ? 1 : -1).forEach(a => {
-            const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || (selectedGuruObj ? selectedGuruObj.name : "Tanpa Nama");
-            const jamMasuk = a.check_in_time || a.jam_masuk || "-";
-            const jamPulang = a.check_out_time || a.jam_pulang || "-";
-
-            html += `
-              <tr>
-                <td>${no++}</td>
-                <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
-                <td>${a.date}</td>
-                <td><span class="badge-masuk">${jamMasuk}</span></td>
-                <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
-              </tr>
-            `;
-          });
-        }
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-      }
-    }
-
-    function resetFilter() {
-      const now = new Date();
-      document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-      document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      document.getElementById("filterGuru").value = "";
-      renderLaporan();
-    }
-
-    function exportKeExcel() {
-      const tabel = document.getElementById("tabelDinamis");
-      const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
-      XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-  </script>
-</body>
-</html>
