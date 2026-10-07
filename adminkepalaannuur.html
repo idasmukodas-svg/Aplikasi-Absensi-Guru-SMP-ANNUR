@@ -640,7 +640,9 @@
     measurementId: "G-776JPG0LY"
 };
     if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.app().firestore('(default)');
     }
     const db = firebase.app().firestore('(default)');
     new QRCode(document.getElementById("qrcode"), { text: "QR_ANNUUR_UTAMA", width: 160, height: 160 });
