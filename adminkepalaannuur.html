@@ -1125,7 +1125,6 @@ const db = firebase.firestore();
       document.getElementById("filterGuru").value = "";
       renderLaporan();
     }
-    const db = firebase.firestore();
     function exportKeExcel() {
       const tabel = document.getElementById("tabelDinamis");
       const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
