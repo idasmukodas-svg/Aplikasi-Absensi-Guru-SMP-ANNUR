@@ -574,35 +574,77 @@
         <h3>SMP PLUS ANNUUR</h3>
         <p>Sistem E-Admin Presensi Digital berbasis Geolocation (GPS) dan QR Code khusus Guru dan Tenaga Kependidikan.</p>
       </div>
+<script>
+    function toggleMenu() {
+      const menu = document.getElementById("navbarMenu");
+      menu.classList.toggle("show");
+    }
 
-      <div class="footer-section">
-        <h3>Akses Cepat Menu</h3>
-        <ul class="footer-links">
-          <li><a href="#sec-lokasi">📍 Pengaturan Titik GPS & Radius</a></li>
-          <li><a href="#sec-qrcode">🔲 QR Code Absensi Utama</a></li>
-          <li><a href="#sec-guru">👥 Kelola Data & Hari Kerja Guru</a></li>
-          <li><a href="#sec-rekap">📊 Rekapitulasi & Export Excel</a></li>
-        </ul>
-      </div>
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        navLinks.forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        
+        const menu = document.getElementById("navbarMenu");
+        if (menu.classList.contains("show")) {
+          menu.classList.remove("show");
+        }
+      });
+    });
 
-      <div class="footer-section">
-        <h3>Bantuan & Status</h3>
-        <p><strong>Database:</strong> Google Firebase Firestore</p>
-        <p><strong>Status Server:</strong> <span style="color: #4ade80;">Normal / Online</span></p>
-        <p><strong>Versi Sistem:</strong> v2.4 (Terintegrasi GPS Validation)</p>
-      </div>
+    // --- INISIALISASI FIREBASE COMPAT ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDmxGccK6cizGDR48KkESFgimHFo4-xPw4",
+      authDomain: "absensiguru-anuur-baru.firebaseapp.com",
+      projectId: "absensiguru-anuur-baru",
+      storageBucket: "absensiguru-anuur-baru.firebasestorage.app",
+      messagingSenderId: "406999573480",
+      appId: "1:406999573480:web:76ab1525ddb36f9eb0fa5d",
+      measurementId: "G-776JPGC0LY"
+    };
 
-      <div class="footer-section">
-        <h3>👨‍💻 Pengembang Sistem</h3>
-        <p><strong>Developer:</strong> Idas</p>
-        <p><strong>Instansi/Unit:</strong> TRIHIRA Studio & Tech Support</p>
-        <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
-          Dikembangkan untuk mendukung efisiensi operasional dan rekapitulasi kehadiran pendidik di SMP PLUS ANNUUR.
-        </p>
-      </div>
-    </div>
+    // Initialize Firebase Compat
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+      
+    new QRCode(document.getElementById("qrcode"), { text: "QR_ANNUUR_UTAMA", width: 160, height: 160 });
 
-    <div class="footer-bottom">
+    let dataGuruSemua = [];
+    let dataAbsensiSemua = [];
+
+    const DEFAULT_LAT = -7.378238288478;
+    const DEFAULT_LNG = 108.1326690316;
+    const DEFAULT_RADIUS = 50;
+
+    const now = new Date();
+    document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
+    document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    function loadPengaturanSekolah() {
+      db.collection("settings").doc("school_location").get().then((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+          const lat = data.latitude !== undefined ? data.latitude : DEFAULT_LAT;
+          const lng = data.longitude !== undefined ? data.longitude : DEFAULT_LNG;
+          const rad = data.radius_meters !== undefined ? data.radius_meters : DEFAULT_RADIUS;
+
+          document.getElementById("inputLat").value = lat;
+          document.getElementById("inputLng").value = lng;
+          document.getElementById("inputRadius").value = rad;
+          document.getElementById("statRadiusDisplay").innerText = rad + " m";
+        } else {
+          document.getElementById("inputLat").value = DEFAULT_LAT;
+          document.getElementById("inputLng").value = DEFAULT_LNG;
+          document.getElementById("inputRadius").value = DEFAULT_RADIUS;
+          document.getElementById("statRadiusDisplay").innerText = DEFAULT_RADIUS + " m";
+        }
+      }).catch(err => {
+        tampilkanPesanAdmin("Gagal memuat pengaturan lokasi: " + err.message, false);
+      });
+    }
       E-Admin Absensi Guru &copy; 2026 | <strong>SMP PLUS ANNUUR</strong>. Developed by <strong>Idas</strong>.
     </div>
   </footer>
