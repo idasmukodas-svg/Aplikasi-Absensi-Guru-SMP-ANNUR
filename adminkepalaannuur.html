@@ -353,8 +353,8 @@
     }
   </style>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -856,285 +856,284 @@ const analytics = getAnalytics(app);
         `;
       });
     }
+window.simpanAtauUpdateGuru = function() {
+  const docId = document.getElementById("editGuruDocId").value;
+  const namaInput = document.getElementById("inputNamaManual").value.trim();
+  
+  if (!namaInput) {
+    alert("Ketikkan nama lengkap guru terlebih dahulu!");
+    return;
+  }
 
-    function simpanAtauUpdateGuru() {
-      const docId = document.getElementById("editGuruDocId").value;
-      const namaInput = document.getElementById("inputNamaManual").value.trim();
-      
-      if (!namaInput) {
-        alert("Ketikkan nama lengkap guru terlebih dahulu!");
-        return;
-      }
+  const checkboxes = document.querySelectorAll('input[name="workDays"]:checked');
+  const selectedDays = Array.from(checkboxes).map(cb => cb.value);
 
-      const checkboxes = document.querySelectorAll('input[name="workDays"]:checked');
-      const selectedDays = Array.from(checkboxes).map(cb => cb.value);
+  if (selectedDays.length === 0) {
+    alert("Pilih minimal 1 hari kerja untuk guru!");
+    return;
+  }
 
-      if (selectedDays.length === 0) {
-        alert("Pilih minimal 1 hari kerja untuk guru!");
-        return;
-      }
+  const namaRapi = formatNamaRapi(namaInput);
 
-      const namaRapi = formatNamaRapi(namaInput);
+  if (docId) {
+    db.collection("teachers").doc(docId).update({
+      name: namaRapi,
+      work_days: selectedDays
+    }).then(() => {
+      alert(`Data guru "${namaRapi}" berhasil diperbarui!`);
+      batalEditGuru();
+      loadDataAwal();
+    });
+  } else {
+    db.collection("teachers").add({
+      name: namaRapi,
+      work_days: selectedDays,
+      device_id: null,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      alert(`Berhasil menambahkan "${namaRapi}" dengan hari kerja: ${selectedDays.join(', ')}`);
+      batalEditGuru();
+      loadDataAwal();
+    });
+  }
+}
 
-      if (docId) {
-        db.collection("teachers").doc(docId).update({
-          name: namaRapi,
-          work_days: selectedDays
-        }).then(() => {
-          alert(`Data guru "${namaRapi}" berhasil diperbarui!`);
-          batalEditGuru();
-          loadDataAwal();
-        });
-      } else {
-        db.collection("teachers").add({
-          name: namaRapi,
-          work_days: selectedDays,
-          device_id: null,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          alert(`Berhasil menambahkan "${namaRapi}" dengan hari kerja: ${selectedDays.join(', ')}`);
-          batalEditGuru();
-          loadDataAwal();
-        });
-      }
+function editGuru(docId) {
+  const g = dataGuruSemua.find(item => item.id === docId);
+  if (!g) return;
+
+  document.getElementById("editGuruDocId").value = docId;
+  document.getElementById("inputNamaManual").value = g.name || "";
+
+  const checkboxes = document.querySelectorAll('input[name="workDays"]');
+  checkboxes.forEach(cb => {
+    cb.checked = g.work_days ? g.work_days.includes(cb.value) : false;
+  });
+
+  document.getElementById("formGuruTitle").innerText = "✏️ Edit Data Guru";
+  document.getElementById("btnSimpanGuru").innerText = "💾 Update Guru";
+  document.getElementById("btnSimpanGuru").className = "btn btn-primary";
+  document.getElementById("btnBatalEdit").style.display = "inline-block";
+
+  document.getElementById("formGuruTitle").scrollIntoView({ behavior: 'smooth' });
+}
+
+function batalEditGuru() {
+  document.getElementById("editGuruDocId").value = "";
+  document.getElementById("inputNamaManual").value = "";
+
+  const checkboxes = document.querySelectorAll('input[name="workDays"]');
+  checkboxes.forEach(cb => {
+    cb.checked = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].includes(cb.value);
+  });
+
+  document.getElementById("formGuruTitle").innerText = "✏️ Tambah Guru & Hari Kerja";
+  document.getElementById("btnSimpanGuru").innerText = "➕ Simpan Guru";
+  document.getElementById("btnSimpanGuru").className = "btn btn-success";
+  document.getElementById("btnBatalEdit").style.display = "none";
+}
+
+function resetDeviceGuru(docId, nama) {
+  if (confirm(`Yakin ingin mereset ikatan HP milik guru: "${nama}"?`)) {
+    db.collection("teachers").doc(docId).update({ device_id: null }).then(() => {
+      alert(`Berhasil mereset HP guru "${nama}".`);
+      loadDataAwal();
+    });
+  }
+}
+
+function hapusGuru(docId, nama) {
+  if (confirm(`Apakah Anda yakin ingin menghapus guru "${nama}"?`)) {
+    db.collection("teachers").doc(docId).delete().then(() => {
+      alert(`Guru "${nama}" berhasil dihapus.`);
+      loadDataAwal();
+    });
+  }
+}
+
+function isiDropdownGuru() {
+  const select = document.getElementById("filterGuru");
+  select.innerHTML = '<option value="">-- Semua Guru --</option>';
+  dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
+    select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+  });
+}
+
+function gantiModeTampilan() {
+  const mode = document.getElementById("modeRekap").value;
+  document.getElementById("boxFilterTanggal").style.display = (mode === "harian") ? "block" : "none";
+  document.getElementById("boxFilterBulan").style.display = (mode === "bulanan") ? "block" : "none";
+  document.getElementById("boxFilterGuru").style.display = (mode === "perguru") ? "block" : "none";
+  renderLaporan();
+}
+
+function isGuruAbsenMatch(record, guru) {
+  if (!record || !guru) return false;
+
+  if ((record.teacher_id && record.teacher_id === guru.id) || 
+      (record.guru_id && record.guru_id === guru.id)) {
+    return true;
+  }
+
+  const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
+  const namaGuruDbRaw = guru.name || "";
+
+  const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+
+  const cleanAbsen = clean(namaAbsenRaw);
+  const cleanGuru = clean(namaGuruDbRaw);
+
+  if (!cleanAbsen || !cleanGuru) return false;
+
+  return cleanAbsen === cleanGuru;
+}
+
+function renderLaporan() {
+  const mode = document.getElementById("modeRekap").value;
+  const tabel = document.getElementById("tabelDinamis");
+
+  if (mode === "harian") {
+    const filterTgl = document.getElementById("filterTanggal").value;
+    let html = `
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Guru</th>
+          <th>Tanggal</th>
+          <th>Jam Masuk</th>
+          <th>Jam Pulang</th>
+          <th>Status Kehadiran</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+
+    const dataFiltered = dataAbsensiSemua.filter(a => a.date && a.date.startsWith(filterTgl));
+
+    if (dataFiltered.length === 0) {
+      html += `<tr><td colspan="6">Tidak ada data presensi pada tanggal ${filterTgl}</td></tr>`;
+    } else {
+      let no = 1;
+      dataFiltered.forEach(a => {
+        const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || "Tanpa Nama";
+        const jamMasuk = a.check_in_time || a.jam_masuk || "-";
+        const jamPulang = a.check_out_time || a.jam_pulang || "-";
+
+        html += `
+          <tr>
+            <td>${no++}</td>
+            <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
+            <td>${a.date}</td>
+            <td><span class="badge-masuk">${jamMasuk}</span></td>
+            <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
+            <td><span class="status-hadir">Hadir</span></td>
+          </tr>
+        `;
+      });
     }
+    html += `</tbody>`;
+    tabel.innerHTML = html;
 
-    function editGuru(docId) {
-      const g = dataGuruSemua.find(item => item.id === docId);
-      if (!g) return;
+  } else if (mode === "bulanan") {
+    const filterBln = document.getElementById("filterBulan").value;
+    let html = `
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Guru</th>
+          <th>Total Kehadiran (Hari)</th>
+          <th>Bulan</th>
+          <th>Persentase</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
 
-      document.getElementById("editGuruDocId").value = docId;
-      document.getElementById("inputNamaManual").value = g.name || "";
-
-      const checkboxes = document.querySelectorAll('input[name="workDays"]');
-      checkboxes.forEach(cb => {
-        cb.checked = g.work_days ? g.work_days.includes(cb.value) : false;
+    let no = 1;
+    dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
+      const absensiGuru = dataAbsensiSemua.filter(a => {
+        const isMatchBulan = a.date && a.date.startsWith(filterBln);
+        return isMatchBulan && isGuruAbsenMatch(a, g);
       });
 
-      document.getElementById("formGuruTitle").innerText = "✏️ Edit Data Guru";
-      document.getElementById("btnSimpanGuru").innerText = "💾 Update Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-primary";
-      document.getElementById("btnBatalEdit").style.display = "inline-block";
+      const tanggalUnik = new Set(absensiGuru.map(a => a.date));
+      const totalHadir = tanggalUnik.size;
+      const targetHariKerja = 20; 
+      const persen = Math.round((totalHadir / targetHariKerja) * 100);
 
-      document.getElementById("formGuruTitle").scrollIntoView({ behavior: 'smooth' });
-    }
+      html += `
+        <tr>
+          <td>${no++}</td>
+          <td class="nama-guru">${formatNamaRapi(g.name)}</td>
+          <td><strong>${totalHadir} Hari</strong></td>
+          <td>${filterBln}</td>
+          <td><span class="badge-persen">${persen}%</span></td>
+        </tr>
+      `;
+    });
+    html += `</tbody>`;
+    tabel.innerHTML = html;
 
-    function batalEditGuru() {
-      document.getElementById("editGuruDocId").value = "";
-      document.getElementById("inputNamaManual").value = "";
+  } else if (mode === "perguru") {
+    const selectedGuruId = document.getElementById("filterGuru").value;
+    const selectedGuruObj = dataGuruSemua.find(g => g.id === selectedGuruId);
 
-      const checkboxes = document.querySelectorAll('input[name="workDays"]');
-      checkboxes.forEach(cb => {
-        cb.checked = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].includes(cb.value);
+    let html = `
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Guru</th>
+          <th>Tanggal</th>
+          <th>Jam Masuk</th>
+          <th>Jam Pulang</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+
+    const dataFiltered = dataAbsensiSemua.filter(a => {
+      if (!selectedGuruId) return true;
+      return isGuruAbsenMatch(a, selectedGuruObj);
+    });
+
+    if (dataFiltered.length === 0) {
+      html += `<tr><td colspan="5">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
+    } else {
+      let no = 1;
+      dataFiltered.sort((a,b) => (a.date < b.date) ? 1 : -1).forEach(a => {
+        const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || (selectedGuruObj ? selectedGuruObj.name : "Tanpa Nama");
+        const jamMasuk = a.check_in_time || a.jam_masuk || "-";
+        const jamPulang = a.check_out_time || a.jam_pulang || "-";
+
+        html += `
+          <tr>
+            <td>${no++}</td>
+            <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
+            <td>${a.date}</td>
+            <td><span class="badge-masuk">${jamMasuk}</span></td>
+            <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
+          </tr>
+        `;
       });
-
-      document.getElementById("formGuruTitle").innerText = "✏️ Tambah Guru & Hari Kerja";
-      document.getElementById("btnSimpanGuru").innerText = "➕ Simpan Guru";
-      document.getElementById("btnSimpanGuru").className = "btn btn-success";
-      document.getElementById("btnBatalEdit").style.display = "none";
     }
+    html += `</tbody>`;
+    tabel.innerHTML = html;
+  }
+}
 
-    function resetDeviceGuru(docId, nama) {
-      if (confirm(`Yakin ingin mereset ikatan HP milik guru: "${nama}"?`)) {
-        db.collection("teachers").doc(docId).update({ device_id: null }).then(() => {
-          alert(`Berhasil mereset HP guru "${nama}".`);
-          loadDataAwal();
-        });
-      }
-    }
-
-    function hapusGuru(docId, nama) {
-      if (confirm(`Apakah Anda yakin ingin menghapus guru "${nama}"?`)) {
-        db.collection("teachers").doc(docId).delete().then(() => {
-          alert(`Guru "${nama}" berhasil dihapus.`);
-          loadDataAwal();
-        });
-      }
-    }
-
-    function isiDropdownGuru() {
-      const select = document.getElementById("filterGuru");
-      select.innerHTML = '<option value="">-- Semua Guru --</option>';
-      dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-        select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
-      });
-    }
-
-    function gantiModeTampilan() {
-      const mode = document.getElementById("modeRekap").value;
-      document.getElementById("boxFilterTanggal").style.display = (mode === "harian") ? "block" : "none";
-      document.getElementById("boxFilterBulan").style.display = (mode === "bulanan") ? "block" : "none";
-      document.getElementById("boxFilterGuru").style.display = (mode === "perguru") ? "block" : "none";
-      renderLaporan();
-    }
-
-    function isGuruAbsenMatch(record, guru) {
-      if (!record || !guru) return false;
-
-      if ((record.teacher_id && record.teacher_id === guru.id) || 
-          (record.guru_id && record.guru_id === guru.id)) {
-        return true;
-      }
-
-      const namaAbsenRaw = record.user_name || record.teacher_name || record.nama_guru || record.nama || "";
-      const namaGuruDbRaw = guru.name || "";
-
-      const clean = (str) => (str || "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-
-      const cleanAbsen = clean(namaAbsenRaw);
-      const cleanGuru = clean(namaGuruDbRaw);
-
-      if (!cleanAbsen || !cleanGuru) return false;
-
-      return cleanAbsen === cleanGuru;
-    }
-
-    function renderLaporan() {
-      const mode = document.getElementById("modeRekap").value;
-      const tabel = document.getElementById("tabelDinamis");
-
-      if (mode === "harian") {
-        const filterTgl = document.getElementById("filterTanggal").value;
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Tanggal</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-              <th>Status Kehadiran</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        const dataFiltered = dataAbsensiSemua.filter(a => a.date && a.date.startsWith(filterTgl));
-
-        if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="6">Tidak ada data presensi pada tanggal ${filterTgl}</td></tr>`;
-        } else {
-          let no = 1;
-          dataFiltered.forEach(a => {
-            const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || "Tanpa Nama";
-            const jamMasuk = a.check_in_time || a.jam_masuk || "-";
-            const jamPulang = a.check_out_time || a.jam_pulang || "-";
-
-            html += `
-              <tr>
-                <td>${no++}</td>
-                <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
-                <td>${a.date}</td>
-                <td><span class="badge-masuk">${jamMasuk}</span></td>
-                <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
-                <td><span class="status-hadir">Hadir</span></td>
-              </tr>
-            `;
-          });
-        }
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-
-      } else if (mode === "bulanan") {
-        const filterBln = document.getElementById("filterBulan").value;
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Total Kehadiran (Hari)</th>
-              <th>Bulan</th>
-              <th>Persentase</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        let no = 1;
-        dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
-          const absensiGuru = dataAbsensiSemua.filter(a => {
-            const isMatchBulan = a.date && a.date.startsWith(filterBln);
-            return isMatchBulan && isGuruAbsenMatch(a, g);
-          });
-
-          const tanggalUnik = new Set(absensiGuru.map(a => a.date));
-          const totalHadir = tanggalUnik.size;
-          const targetHariKerja = 20; 
-          const persen = Math.round((totalHadir / targetHariKerja) * 100);
-
-          html += `
-            <tr>
-              <td>${no++}</td>
-              <td class="nama-guru">${formatNamaRapi(g.name)}</td>
-              <td><strong>${totalHadir} Hari</strong></td>
-              <td>${filterBln}</td>
-              <td><span class="badge-persen">${persen}%</span></td>
-            </tr>
-          `;
-        });
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-
-      } else if (mode === "perguru") {
-        const selectedGuruId = document.getElementById("filterGuru").value;
-        const selectedGuruObj = dataGuruSemua.find(g => g.id === selectedGuruId);
-
-        let html = `
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Nama Guru</th>
-              <th>Tanggal</th>
-              <th>Jam Masuk</th>
-              <th>Jam Pulang</th>
-            </tr>
-          </thead>
-          <tbody>
-        `;
-
-        const dataFiltered = dataAbsensiSemua.filter(a => {
-          if (!selectedGuruId) return true;
-          return isGuruAbsenMatch(a, selectedGuruObj);
-        });
-
-        if (dataFiltered.length === 0) {
-          html += `<tr><td colspan="5">Tidak ada riwayat presensi ditemukan untuk guru ini.</td></tr>`;
-        } else {
-          let no = 1;
-          dataFiltered.sort((a,b) => (a.date < b.date) ? 1 : -1).forEach(a => {
-            const namaGuru = a.user_name || a.teacher_name || a.nama_guru || a.nama || (selectedGuruObj ? selectedGuruObj.name : "Tanpa Nama");
-            const jamMasuk = a.check_in_time || a.jam_masuk || "-";
-            const jamPulang = a.check_out_time || a.jam_pulang || "-";
-
-            html += `
-              <tr>
-                <td>${no++}</td>
-                <td class="nama-guru">${formatNamaRapi(namaGuru)}</td>
-                <td>${a.date}</td>
-                <td><span class="badge-masuk">${jamMasuk}</span></td>
-                <td>${jamPulang !== "-" ? `<span class="badge-pulang">${jamPulang}</span>` : "-"}</td>
-              </tr>
-            `;
-          });
-        }
-        html += `</tbody>`;
-        tabel.innerHTML = html;
-      }
-    }
-
-    function resetFilter() {
-      const now = new Date();
-      document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-      document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-      document.getElementById("filterGuru").value = "";
-      renderLaporan();
-    }
-    
-    function exportKeExcel() {
-      const tabel = document.getElementById("tabelDinamis");
-      const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
-      XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-  </script>
+function resetFilter() {
+  const now = new Date();
+  document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
+  document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById("filterGuru").value = "";
+  renderLaporan();
+}
+ 
+function exportKeExcel() {
+  const tabel = document.getElementById("tabelDinamis");
+  const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
+  XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+</script>
 </body>
 </html>
