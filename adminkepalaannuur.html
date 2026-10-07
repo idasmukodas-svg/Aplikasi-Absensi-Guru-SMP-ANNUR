@@ -642,8 +642,7 @@
     if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
-const db = firebase.firestore();
-
+const db = firebase.app().firestore('(default)');
     new QRCode(document.getElementById("qrcode"), { text: "QR_ANNUUR_UTAMA", width: 160, height: 160 });
 
     let dataGuruSemua = [];
