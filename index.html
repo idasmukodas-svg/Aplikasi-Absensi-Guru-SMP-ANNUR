@@ -147,4 +147,235 @@
       db.collection("settings").doc("school_location").get().then((doc) => {
         if (doc.exists) {
           const data = doc.data();
-          SEKOL
+          SEKOLAH_LAT = data.latitude !== undefined ? data.latitude : SEKOLAH_LAT;
+          SEKOLAH_LNG = data.longitude !== undefined ? data.longitude : SEKOLAH_LNG;
+          MAX_RADIUS = data.radius_meters !== undefined ? data.radius_meters : MAX_RADIUS;
+        }
+      }).catch(err => console.error("Gagal muat lokasi:", err));
+    }
+
+    function loadDaftarGuru() {
+      const select = document.getElementById("select-guru");
+      db.collection("teachers").get().then((snap) => {
+        dataGuruSemua = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        if (dataGuruSemua.length === 0) {
+          select.innerHTML = '<option value="">-- Belum ada data guru terdaftar --</option>';
+          return;
+        }
+
+        dataGuruSemua.sort((a, b) => (a.name > b.name) ? 1 : -1);
+
+        select.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+        dataGuruSemua.forEach(g => {
+          select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+        });
+      }).catch(err => {
+        select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+        showAlert("Gagal mengambil daftar guru dari Firebase: " + err.message, "error");
+      });
+    }
+
+    // ----------------------------------------------------
+    // 5. LOGIKA GEOFENCING (GPS)
+    // ----------------------------------------------------
+    function getLokasi() {
+      const statusText = document.getElementById("geo-status");
+      const distText = document.getElementById("geo-distance");
+
+      if (!navigator.geolocation) {
+        statusText.innerText = "GPS tidak didukung browser ini.";
+        return;
+      }
+
+      statusText.innerText = "Mengecek koordinat GPS...";
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userLat = position.coords.latitude;
+          userLng = position.coords.longitude;
+
+          const distance = calculateDistance(userLat, userLng, SEKOLAH_LAT, SEKOLAH_LNG);
+          distText.innerText = `Jarak dari sekolah: ${Math.round(distance)} meter`;
+
+          if (distance <= MAX_RADIUS) {
+            statusText.innerText = "Status: Dalam Radius Sekolah ✅";
+            statusText.className = "text-emerald-600 font-semibold";
+          } else {
+            statusText.innerText = `Status: Di Luar Radius Sekolah (Maks ${MAX_RADIUS}m) ❌`;
+            statusText.className = "text-rose-600 font-semibold";
+          }
+        },
+        (error) => {
+          statusText.innerText = "Gagal mengambil GPS. Mohon izinkan akses lokasi.";
+          statusText.className = "text-rose-500 font-semibold";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    }
+
+    // ----------------------------------------------------
+    // 6. LOGIKA SCANNER QR CODE
+    // ----------------------------------------------------
+    function startScanner() {
+      const idGuru = document.getElementById("select-guru").value;
+      if (!idGuru) {
+        showAlert("Pilih nama Anda terlebih dahulu!", "error");
+        return;
+      }
+
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 200, height: 200 } },
+        onScanSuccess
+      ).then(() => {
+        document.getElementById("btn-start").classList.add("hidden");
+        document.getElementById("btn-stop").classList.remove("hidden");
+      }).catch(err => {
+        showAlert("Gagal mengakses kamera: " + err, "error");
+      });
+    }
+
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode = null;
+          document.getElementById("btn-start").classList.remove("hidden");
+          document.getElementById("btn-stop").classList.add("hidden");
+        }).catch(err => console.error(err));
+      }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+      stopScanner();
+      
+      if (userLat === null || userLng === null) {
+        showAlert("Lokasi GPS belum terdeteksi! Silakan klik Refresh GPS.", "error");
+        return;
+      }
+
+      const distance = calculateDistance(userLat, userLng, SEKOLAH_LAT, SEKOLAH_LNG);
+      if (distance > MAX_RADIUS) {
+        showAlert(`Gagal Absen: Jarak Anda (${Math.round(distance)}m) melebihi radius sekolah (${MAX_RADIUS}m).`, "error");
+        return;
+      }
+
+      prosesAbsensi(decodedText);
+    }
+
+    // ----------------------------------------------------
+    // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE
+    // ----------------------------------------------------
+    async function prosesAbsensi(qrContent) {
+      const guruSelect = document.getElementById("select-guru");
+      const guruId = guruSelect.value;
+      const guruNama = guruSelect.options[guruSelect.selectedIndex].text;
+      
+      const now = new Date();
+      const tglStr = now.toISOString().split('T')[0];
+      const jamStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      const namaHariArr = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const hariIniStr = namaHariArr[now.getDay()];
+
+      const guruObj = dataGuruSemua.find(g => g.id === guruId);
+      if (guruObj && guruObj.work_days && Array.isArray(guruObj.work_days)) {
+        if (!guruObj.work_days.includes(hariIniStr)) {
+          showAlert(`⚠️ Mohon Maaf, hari ini (${hariIniStr}) bukan jadwal hari kerja Anda.`, "error");
+          return;
+        }
+      }
+
+      if (guruObj && guruObj.device_id && guruObj.device_id !== deviceUUID) {
+        showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin untuk reset HP.", "error");
+        return;
+      }
+
+      if (guruObj && !guruObj.device_id) {
+        await db.collection("teachers").doc(guruId).update({ device_id: deviceUUID });
+      }
+
+      try {
+        const attendanceRef = db.collection("attendances");
+        const querySnapshot = await attendanceRef
+          .where("date", "==", tglStr)
+          .where("teacher_id", "==", guruId)
+          .get();
+
+        if (querySnapshot.empty) {
+          const payloadMasuk = {
+            teacher_id: guruId,
+            teacher_name: guruNama,
+            user_name: guruNama,
+            device_id: deviceUUID,
+            qr_code: qrContent,
+            latitude: userLat,
+            longitude: userLng,
+            date: tglStr,
+            check_in_time: jamStr,
+            check_out_time: "-",
+            status: "Hadir",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          await attendanceRef.add(payloadMasuk);
+          showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
+
+        } else {
+          const docSnap = querySnapshot.docs[0];
+          const docId = docSnap.id;
+          const dataAbsen = docSnap.data();
+
+          if (!dataAbsen.check_out_time || dataAbsen.check_out_time === "-") {
+            await attendanceRef.doc(docId).update({
+              check_out_time: jamStr,
+              check_out_latitude: userLat,
+              check_out_longitude: userLng,
+              updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
+
+          } else {
+            showAlert(`⚠️ Mohon Maaf, ${guruNama}, Anda sudah menyelesaikan Absensi Masuk dan Pulang untuk hari ini.`, "error");
+          }
+        }
+
+      } catch (error) {
+        showAlert("Gagal memproses absensi: " + error.message, "error");
+      }
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById("alert-box");
+      box.classList.remove("hidden", "bg-emerald-100", "text-emerald-800", "bg-rose-100", "text-rose-800");
+
+      if (type === "success") {
+        box.classList.add("bg-emerald-100", "text-emerald-800");
+      } else {
+        box.classList.add("bg-rose-100", "text-rose-800");
+      }
+
+      box.innerText = msg;
+    }
+  </script>
+</body>
+</html>
