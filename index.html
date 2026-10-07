@@ -1,91 +1,181 @@
 <!DOCTYPE html>
+
 <html lang="id">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Presensi Guru - SMP PLUS ANNUUR</title>
+
     
+
     <!-- Ikon Sekolah -->
+
     <link rel="icon" type="image/jpeg" href="logo.jpeg">
+
     <link rel="apple-touch-icon" href="logo.jpeg">
+
     <link rel="manifest" href="manifest.json">
 
+
+
+
+
     <!-- Tailwind CSS CDN -->
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <!-- HTML5 QR Code Scanner -->
+
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <!-- Firebase SDKs (Compat) -->
+
+    <!-- Firebase SDKs -->
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
 </head>
+
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-10">
 
+
+
   <!-- Header -->
+
   <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
+
     <div class="max-w-md mx-auto flex justify-between items-center">
+
       <h1 class="text-lg font-bold">Presensi Guru</h1>
+
       <span id="clock" class="text-xs bg-indigo-700 px-2 py-1 rounded font-mono">00:00:00</span>
+
     </div>
+
   </header>
+
+
 
   <main class="max-w-md mx-auto p-4 space-y-4">
 
+
+
     <!-- Card Profil & Device ID -->
+
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+
       <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Identitas Perangkat</h2>
+
       <div class="mb-3">
+
         <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Nama Guru</label>
+
         <select id="select-guru" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none">
+
           <option value="">-- Memuat Daftar Guru... --</option>
+
         </select>
+
       </div>
+
       <div class="text-xs bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center">
+
         <span class="text-slate-500">Device ID:</span>
+
         <span id="device-id-display" class="font-mono text-slate-700 font-semibold">Generating...</span>
+
       </div>
+
     </div>
+
+
 
     <!-- Card GPS Check -->
+
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+
       <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Lokasi Terkini</h2>
+
       <div class="flex items-center justify-between text-xs mb-3">
+
         <div>
+
           <p id="geo-status" class="text-slate-600">Mengecek koordinat GPS...</p>
+
           <p id="geo-distance" class="font-bold text-slate-800 mt-0.5">-</p>
+
         </div>
+
         <button onclick="getLokasi()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-300 font-medium transition">
+
           Refresh GPS
+
         </button>
+
       </div>
+
     </div>
+
+
 
     <!-- Scanner Box -->
+
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+
       <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Scan QR Absensi</h2>
+
       
+
       <div id="reader" class="overflow-hidden rounded-lg bg-black text-white min-h-[220px] flex items-center justify-center">
+
         <span class="text-xs text-slate-400">Kamera belum aktif</span>
+
       </div>
+
+
 
       <div class="mt-4 flex gap-2">
+
         <button id="btn-start" onclick="startScanner()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow-sm transition">
+
           Buka Kamera
+
         </button>
+
         <button id="btn-stop" onclick="stopScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-sm py-2.5 rounded-lg transition hidden">
+
           Tutup Kamera
+
         </button>
+
       </div>
+
     </div>
 
+
+
     <!-- Status Output -->
+
     <div id="alert-box" class="p-3 rounded-lg text-xs font-medium text-center hidden"></div>
+
+
 
   </main>
 
+
+
   <script>
+
     // ----------------------------------------------------
-    // 1. KONFIGURASI FIREBASE (Disamakan dengan Admin)
+
+    // 1. KONFIGURASI FIREBASE
+
     // ----------------------------------------------------
+
     const firebaseConfig = {
       apiKey: "AIzaSyDmxGccK6cizGDR48KkESFgimHFo4-xPw4",
       authDomain: "absensiguru-anuur-baru.firebaseapp.com",
@@ -96,271 +186,536 @@
       measurementId: "G-776JPGC0LY"
     };
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+
+
+    firebase.initializeApp(firebaseConfig);
+
     const db = firebase.firestore();
 
+
+
     // ----------------------------------------------------
+
     // 2. VARIABEL LOKASI & RADIUS DEFAULT
+
     // ----------------------------------------------------
-    let SEKOLAH_LAT = -7.378238288478;
-    let SEKOLAH_LNG = 108.1326690316;
+
+    let SEKOLAH_LAT = -7.345545;
+
+    let SEKOLAH_LNG = 108.057451;
+
     let MAX_RADIUS = 50;
 
+
+
     let html5QrCode;
+
     let userLat = null;
+
     let userLng = null;
+
     let deviceUUID = "";
+
     let dataGuruSemua = [];
 
+
+
     // ----------------------------------------------------
+
     // 3. INISIALISASI SAAT HALAMAN DIBUKA
+
     // ----------------------------------------------------
+
     window.addEventListener("DOMContentLoaded", () => {
+
       initDeviceId();
+
       loadPengaturanSekolah();
+
       loadDaftarGuru();
+
       getLokasi();
+
       setInterval(updateClock, 1000);
+
     });
 
+
+
     function updateClock() {
+
       const now = new Date();
+
       document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID');
+
     }
+
+
 
     function initDeviceId() {
+
       let id = localStorage.getItem("ANNUUR_DEVICE_ID");
+
       if (!id) {
+
         id = 'DEV-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+
         localStorage.setItem("ANNUUR_DEVICE_ID", id);
+
       }
+
       deviceUUID = id;
+
       document.getElementById("device-id-display").innerText = id;
+
     }
 
+
+
     // ----------------------------------------------------
+
     // 4. MEMUAT DATA LOKASI & DAFTAR GURU DARI FIREBASE
+
     // ----------------------------------------------------
+
     function loadPengaturanSekolah() {
+
       db.collection("settings").doc("school_location").get().then((doc) => {
+
         if (doc.exists) {
+
           const data = doc.data();
+
           SEKOLAH_LAT = data.latitude !== undefined ? data.latitude : SEKOLAH_LAT;
+
           SEKOLAH_LNG = data.longitude !== undefined ? data.longitude : SEKOLAH_LNG;
+
           MAX_RADIUS = data.radius_meters !== undefined ? data.radius_meters : MAX_RADIUS;
+
         }
+
       }).catch(err => console.error("Gagal muat lokasi:", err));
+
     }
+
+
 
     function loadDaftarGuru() {
+
       const select = document.getElementById("select-guru");
+
       db.collection("teachers").get().then((snap) => {
+
         dataGuruSemua = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
         
+
         if (dataGuruSemua.length === 0) {
+
           select.innerHTML = '<option value="">-- Belum ada data guru --</option>';
+
           return;
+
         }
+
+
 
         dataGuruSemua.sort((a, b) => (a.name > b.name) ? 1 : -1);
 
+
+
         select.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+
         dataGuruSemua.forEach(g => {
+
           select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+
         });
+
       }).catch(err => {
+
         select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+
         showAlert("Gagal mengambil daftar guru dari Firebase!", "error");
+
       });
+
     }
 
+
+
     // ----------------------------------------------------
+
     // 5. LOGIKA GEOFENCING (GPS)
+
     // ----------------------------------------------------
+
     function getLokasi() {
+
       const statusText = document.getElementById("geo-status");
+
       const distText = document.getElementById("geo-distance");
 
+
+
       if (!navigator.geolocation) {
+
         statusText.innerText = "GPS tidak didukung browser ini.";
+
         return;
+
       }
+
+
 
       statusText.innerText = "Mengecek koordinat GPS...";
+
       navigator.geolocation.getCurrentPosition(
+
         (position) => {
+
           userLat = position.coords.latitude;
+
           userLng = position.coords.longitude;
 
+
+
           const distance = calculateDistance(userLat, userLng, SEKOLAH_LAT, SEKOLAH_LNG);
+
           distText.innerText = `Jarak dari sekolah: ${Math.round(distance)} meter`;
 
+
+
           if (distance <= MAX_RADIUS) {
+
             statusText.innerText = "Status: Dalam Radius Sekolah ✅";
+
             statusText.className = "text-emerald-600 font-semibold";
+
           } else {
+
             statusText.innerText = `Status: Di Luar Radius Sekolah (Maks ${MAX_RADIUS}m) ❌`;
+
             statusText.className = "text-rose-600 font-semibold";
+
           }
+
         },
+
         (error) => {
+
           statusText.innerText = "Gagal mengambil GPS. Pastikan Izin Akses Aktif.";
+
           statusText.className = "text-rose-500";
+
         },
+
         { enableHighAccuracy: true }
+
       );
+
     }
+
+
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
+
       const R = 6371e3;
+
       const φ1 = lat1 * Math.PI / 180;
+
       const φ2 = lat2 * Math.PI / 180;
+
       const Δφ = (lat2 - lat1) * Math.PI / 180;
+
       const Δλ = (lon2 - lon1) * Math.PI / 180;
 
+
+
       const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+
                 Math.cos(φ1) * Math.cos(φ2) *
+
                 Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
+
+
       return R * c;
+
     }
 
+
+
     // ----------------------------------------------------
+
     // 6. LOGIKA SCANNER QR CODE
+
     // ----------------------------------------------------
+
     function startScanner() {
+
       const idGuru = document.getElementById("select-guru").value;
+
       if (!idGuru) {
+
         showAlert("Pilih nama Anda terlebih dahulu!", "error");
+
         return;
+
       }
+
+
 
       html5QrCode = new Html5Qrcode("reader");
+
       html5QrCode.start(
+
         { facingMode: "environment" },
+
         { fps: 10, qrbox: { width: 200, height: 200 } },
+
         onScanSuccess
+
       ).then(() => {
+
         document.getElementById("btn-start").classList.add("hidden");
+
         document.getElementById("btn-stop").classList.remove("hidden");
+
       }).catch(err => {
+
         showAlert("Gagal mengakses kamera: " + err, "error");
+
       });
+
     }
+
+
 
     function stopScanner() {
+
       if (html5QrCode) {
+
         html5QrCode.stop().then(() => {
+
           document.getElementById("btn-start").classList.remove("hidden");
+
           document.getElementById("btn-stop").classList.add("hidden");
+
         });
+
       }
+
     }
+
+
 
     function onScanSuccess(decodedText, decodedResult) {
+
       stopScanner();
+
       
+
       if (userLat === null || userLng === null) {
+
         showAlert("Lokasi GPS belum terdeteksi! Silakan klik Refresh GPS.", "error");
+
         return;
+
       }
+
+
 
       const distance = calculateDistance(userLat, userLng, SEKOLAH_LAT, SEKOLAH_LNG);
+
       if (distance > MAX_RADIUS) {
+
         showAlert(`Gagal Absen: Jarak Anda (${Math.round(distance)}m) melebihi radius sekolah (${MAX_RADIUS}m).`, "error");
+
         return;
+
       }
+
+
 
       prosesAbsensi(decodedText);
+
     }
 
+
+
     // ----------------------------------------------------
+
     // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE
+
     // ----------------------------------------------------
+
     async function prosesAbsensi(qrContent) {
+
       const guruSelect = document.getElementById("select-guru");
+
       const guruId = guruSelect.value;
+
       const guruNama = guruSelect.options[guruSelect.selectedIndex].text;
+
       
+
       const now = new Date();
+
       const tglStr = now.toISOString().split('T')[0];
+
       const jamStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
+
+
       const guruObj = dataGuruSemua.find(g => g.id === guruId);
+
       if (guruObj && guruObj.device_id && guruObj.device_id !== deviceUUID) {
+
         showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin untuk reset HP.", "error");
+
         return;
+
       }
+
+
 
       if (guruObj && !guruObj.device_id) {
+
         await db.collection("teachers").doc(guruId).update({ device_id: deviceUUID });
+
       }
+
+
 
       try {
+
         const attendanceRef = db.collection("attendances");
+
         const querySnapshot = await attendanceRef
+
           .where("date", "==", tglStr)
+
           .where("teacher_id", "==", guruId)
+
           .get();
 
+
+
         if (querySnapshot.empty) {
+
           const payloadMasuk = {
+
             teacher_id: guruId,
+
             teacher_name: guruNama,
+
             user_name: guruNama,
+
             device_id: deviceUUID,
+
             qr_code: qrContent,
+
             latitude: userLat,
+
             longitude: userLng,
+
             date: tglStr,
+
             check_in_time: jamStr,
+
             check_out_time: "-",
+
             status: "Hadir",
+
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
+
           };
 
+
+
           await attendanceRef.add(payloadMasuk);
+
           showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
 
+
+
         } else {
+
           const docSnap = querySnapshot.docs[0];
+
           const docId = docSnap.id;
+
           const dataAbsen = docSnap.data();
 
+
+
           if (!dataAbsen.check_out_time || dataAbsen.check_out_time === "-") {
+
             await attendanceRef.doc(docId).update({
+
               check_out_time: jamStr,
+
               check_out_latitude: userLat,
+
               check_out_longitude: userLng,
+
               updated_at: firebase.firestore.FieldValue.serverTimestamp()
+
             });
+
             showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
 
+
+
           } else {
+
             showAlert(`⚠️ Mohon Maaf, ${guruNama}, Anda sudah menyelesaikan Absensi Masuk dan Pulang untuk hari ini.`, "error");
+
           }
+
         }
 
+
+
       } catch (error) {
+
         showAlert("Gagal memproses absensi: " + error.message, "error");
+
       }
+
     }
+
+
 
     function showAlert(msg, type) {
+
       const box = document.getElementById("alert-box");
+
       box.classList.remove("hidden", "bg-emerald-100", "text-emerald-800", "bg-rose-100", "text-rose-800");
 
+
+
       if (type === "success") {
+
         box.classList.add("bg-emerald-100", "text-emerald-800");
+
       } else {
+
         box.classList.add("bg-rose-100", "text-rose-800");
+
       }
 
+
+
       box.innerText = msg;
+
     }
+
   </script>
+
 </body>
-</html>
+
+</html> 
