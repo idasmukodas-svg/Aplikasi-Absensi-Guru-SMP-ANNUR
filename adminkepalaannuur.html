@@ -536,44 +536,15 @@
             </select>
           </div>
 
-          <div id="boxFilterTanggal">
-            <label><strong>Pilih Tanggal:</strong></label><br>
-            <input type="date" id="filterTanggal" class="form-control" onchange="renderLaporan()" style="width: auto;">
-          </div>
-
-          <div id="boxFilterBulan" style="display: none;">
-            <label><strong>Pilih Bulan:</strong></label><br>
-            <input type="month" id="filterBulan" class="form-control" onchange="renderLaporan()" style="width: auto;">
-          </div>
-
-          <div id="boxFilterGuru" style="display: none;">
-            <label><strong>Pilih Guru:</strong></label><br>
-            <select id="filterGuru" class="form-control" onchange="renderLaporan()" style="width: auto;">
-              <option value="">-- Semua Guru --</option>
-            </select>
-          </div>
-
-          <div style="margin-top: 18px; display: flex; gap: 8px;">
-            <button class="btn btn-primary" onclick="resetFilter()">🔄 Reset</button>
-            <button class="btn btn-success" onclick="exportKeExcel()">📊 Export Excel</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Area Tabel Dinamis -->
-      <div style="overflow-x: auto;">
-        <table id="tabelDinamis"></table>
-      </div>
-    </div>
-
-  </div>
-
-  <footer>
+         <footer>
     <div class="footer-content">
       <div class="footer-section">
         <h3>SMP PLUS ANNUUR</h3>
         <p>Sistem E-Admin Presensi Digital berbasis Geolocation (GPS) dan QR Code khusus Guru dan Tenaga Kependidikan.</p>
       </div>
+    </div>
+  </footer>
+
 <script>
     function toggleMenu() {
       const menu = document.getElementById("navbarMenu");
@@ -592,13 +563,7 @@
         }
       });
     });
-
-   <script>
-    function toggleMenu() {
-      const menu = document.getElementById("navbarMenu");
-      menu.classList.toggle("show");
-    }
-
+</script>
     const navLinks = document.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
       link.addEventListener('click', function() {
