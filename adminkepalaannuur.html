@@ -1046,7 +1046,7 @@ const db = firebase.firestore();
           <tbody>
         `;
 
-        let no = 1;
+          let no = 1;
         dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
           const absensiGuru = dataAbsensiSemua.filter(a => {
             const isMatchBulan = a.date && a.date.startsWith(filterBln);
@@ -1125,16 +1125,7 @@ const db = firebase.firestore();
       document.getElementById("filterGuru").value = "";
       renderLaporan();
     }
-
-   function resetFilter() {
-        const now = new Date();
-        document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-        document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        document.getElementById("filterGuru").value = "";
-        renderLaporan();
-    }
-
-    const firebaseConfig = {
+const firebaseConfig = {
         apiKey: "AIzaSyDmxGccK6cizGDR48KkESF gimHfO4-XpW4",
         authDomain: "absensiguru-annuur-baru.firebaseapp.com",
         projectId: "absensiguru-annuur-baru",
@@ -1148,7 +1139,6 @@ const db = firebase.firestore();
         firebase.initializeApp(firebaseConfig);
     }
     const db = firebase.firestore();
-
     function exportKeExcel() {
       const tabel = document.getElementById("tabelDinamis");
       const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
