@@ -639,12 +639,11 @@
     appId: "1:406999573480:web:76ab1525ddb36f9eb0fa5d",
     measurementId: "G-776JPG0LY"
 };
-    if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.app().firestore('(default)');
+if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
     }
-    const db = firebase.app().firestore('(default)');
+    const db = firebase.firestore();
+    
     new QRCode(document.getElementById("qrcode"), { text: "QR_ANNUUR_UTAMA", width: 160, height: 160 });
 
     let dataGuruSemua = [];
