@@ -1125,19 +1125,6 @@ const db = firebase.firestore();
       document.getElementById("filterGuru").value = "";
       renderLaporan();
     }
-const firebaseConfig = {
-        apiKey: "AIzaSyDmxGccK6cizGDR48KkESF gimHfO4-XpW4",
-        authDomain: "absensiguru-annuur-baru.firebaseapp.com",
-        projectId: "absensiguru-annuur-baru",
-        storageBucket: "absensiguru-annuur-baru.appspot.com",
-        messagingSenderId: "406999573480",
-        appId: "1:406999573480:web:76ab1525ddb36f9eb0fa5d",
-        measurementId: "G-776JPG0LY"
-    };
-
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
     const db = firebase.firestore();
     function exportKeExcel() {
       const tabel = document.getElementById("tabelDinamis");
