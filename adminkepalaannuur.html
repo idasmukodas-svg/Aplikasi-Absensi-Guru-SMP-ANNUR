@@ -856,6 +856,26 @@ const analytics = getAnalytics(app);
         `;
       });
     }
+// --- BAGIAN QR CODE ---
+function generateQRCode() {
+  const qrContainer = document.getElementById("qrcode");
+  if (!qrContainer) return;
+  qrContainer.innerHTML = "";
+  
+  // Ambil teks atau URL untuk QR Code (sesuaikan dengan kebutuhan absensi Anda)
+  const textData = "https://aplikasi-absensi-guru-smp-annuur.vercel.app/absen.html"; 
+  
+  new QRCode(qrContainer, {
+    text: textData,
+    width: 200,
+    height: 200,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctErrorLevel: QRCode.CorrectLevel.H
+  });
+}
+
+// --- MANAJEMEN GURU & ABSENSI ---
 window.simpanAtauUpdateGuru = function() {
   const docId = document.getElementById("editGuruDocId").value;
   const namaInput = document.getElementById("inputNamaManual").value.trim();
@@ -953,6 +973,7 @@ function hapusGuru(docId, nama) {
 
 function isiDropdownGuru() {
   const select = document.getElementById("filterGuru");
+  if (!select) return;
   select.innerHTML = '<option value="">-- Semua Guru --</option>';
   dataGuruSemua.sort((a,b) => (a.name > b.name) ? 1 : -1).forEach(g => {
     select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
@@ -991,6 +1012,7 @@ function isGuruAbsenMatch(record, guru) {
 function renderLaporan() {
   const mode = document.getElementById("modeRekap").value;
   const tabel = document.getElementById("tabelDinamis");
+  if (!tabel) return;
 
   if (mode === "harian") {
     const filterTgl = document.getElementById("filterTanggal").value;
@@ -1123,17 +1145,27 @@ function renderLaporan() {
 
 function resetFilter() {
   const now = new Date();
-  document.getElementById("filterTanggal").value = now.toISOString().split('T')[0];
-  document.getElementById("filterBulan").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  document.getElementById("filterGuru").value = "";
+  const tglElem = document.getElementById("filterTanggal");
+  const blnElem = document.getElementById("filterBulan");
+  const guruElem = document.getElementById("filterGuru");
+
+  if (tglElem) tglElem.value = now.toISOString().split('T')[0];
+  if (blnElem) blnElem.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  if (guruElem) guruElem.value = "";
   renderLaporan();
 }
  
 function exportKeExcel() {
   const tabel = document.getElementById("tabelDinamis");
+  if (!tabel) return;
   const wb = XLSX.utils.table_to_book(tabel, { sheet: "Rekap Absensi" });
   XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
+
+// Panggil fungsi QR Code saat halaman dimuat (pastikan library qrcode.js sudah disertakan di HTML)
+document.addEventListener("DOMContentLoaded", () => {
+  generateQRCode();
+});
 </script>
 </body>
 </html>
