@@ -289,7 +289,7 @@
     }
 
     // ----------------------------------------------------
-    // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE (Dengan Pilihan Dropdown)
+    // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE (Dengan Validasi Device ID Ketat)
     // ----------------------------------------------------
     async function prosesAbsensi(qrContent) {
       const guruSelect = document.getElementById("select-guru");
@@ -303,11 +303,21 @@
       const jamStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
       const guruObj = dataGuruSemua.find(g => g.id === guruId);
+
+      // --- VALIDASI KETAT 1: CEK APAKAH HP INI SUDAH TERIKAT KE AKUN GURU LAIN ---
+      const guruTerikatDiHpIni = dataGuruSemua.find(g => g.device_id === deviceUUID);
+      if (guruTerikatDiHpIni && guruTerikatDiHpIni.id !== guruId) {
+        showAlert(`Gagal Absen: Perangkat ini sudah terikat permanen dengan akun atas nama "${guruTerikatDiHpIni.name}". Satu HP hanya untuk satu akun guru!`, "error");
+        return;
+      }
+
+      // --- VALIDASI KETAT 2: CEK APAKAH AKUN GURU INI SUDAH TERIKAT DI HP LAIN ---
       if (guruObj && guruObj.device_id && guruObj.device_id !== deviceUUID) {
         showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin untuk reset HP.", "error");
         return;
       }
 
+      // Jika akun belum punya device_id, ikat ke HP ini sekarang
       if (guruObj && !guruObj.device_id) {
         await db.collection("teachers").doc(guruId).update({ device_id: deviceUUID });
       }
