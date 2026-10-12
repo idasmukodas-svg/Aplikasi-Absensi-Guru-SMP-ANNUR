@@ -18,84 +18,93 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-10">
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-10 flex flex-col justify-between">
 
-  <!-- Header -->
-  <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
-    <div class="max-w-md mx-auto flex justify-between items-center">
-      <h1 class="text-lg font-bold">Presensi Guru</h1>
-      <span id="clock" class="text-xs bg-indigo-700 px-2 py-1 rounded font-mono">00:00:00</span>
-    </div>
-  </header>
-
-  <main class="max-w-md mx-auto p-4 space-y-4">
-
-    <!-- Card Profil & Device ID -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Identitas Perangkat</h2>
-      <div class="mb-3">
-        <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Nama Guru</label>
-        <select id="select-guru" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none">
-          <option value="">-- Memuat Daftar Guru... --</option>
-        </select>
+  <div>
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-10">
+      <div class="max-w-md mx-auto flex justify-between items-center">
+        <h1 class="text-lg font-bold">Presensi Guru</h1>
+        <span id="clock" class="text-xs bg-indigo-700 px-2 py-1 rounded font-mono">00:00:00</span>
       </div>
+    </header>
 
-      <!-- Fitur Dropdown Pilih Jenis Absen -->
-      <div class="mb-3">
-        <label class="block text-xs font-medium text-slate-600 mb-1">Jenis Presensi</label>
-        <select id="select-jenis-absen" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-indigo-700">
-          <option value="auto">⚡ Otomatis (Masuk / Pulang Berdasarkan Sistem)</option>
-          <option value="masuk">📥 Absen Masuk</option>
-          <option value="pulang">📤 Absen Pulang</option>
-        </select>
-      </div>
+    <main class="max-w-md mx-auto p-4 space-y-4">
 
-      <div class="text-xs bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center">
-        <span class="text-slate-500">Device ID:</span>
-        <span id="device-id-display" class="font-mono text-slate-700 font-semibold">Generating...</span>
-      </div>
-    </div>
-
-    <!-- Card GPS Check -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-      <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Lokasi Terkini</h2>
-      <div class="flex items-center justify-between text-xs mb-3">
-        <div>
-          <p id="geo-status" class="text-slate-600">Mengecek koordinat GPS...</p>
-          <p id="geo-distance" class="font-bold text-slate-800 mt-0.5">-</p>
+      <!-- Card Profil & Device ID -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Identitas Perangkat</h2>
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Nama Guru</label>
+          <select id="select-guru" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="">-- Memuat Daftar Guru... --</option>
+          </select>
         </div>
-        <button onclick="getLokasi()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-300 font-medium transition">
-          Refresh GPS
-        </button>
+
+        <!-- Fitur Dropdown Pilih Jenis Absen -->
+        <div class="mb-3">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Jenis Presensi</label>
+          <select id="select-jenis-absen" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-indigo-700">
+            <option value="auto">⚡ Otomatis (Masuk / Pulang Berdasarkan Sistem)</option>
+            <option value="masuk">📥 Absen Masuk</option>
+            <option value="pulang">📤 Absen Pulang</option>
+          </select>
+        </div>
+
+        <div class="text-xs bg-slate-50 p-2 rounded border border-slate-200 flex justify-between items-center">
+          <span class="text-slate-500">Device ID:</span>
+          <span id="device-id-display" class="font-mono text-slate-700 font-semibold">Generating...</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Scanner Box -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-      <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Scan QR Absensi</h2>
-      
-      <div id="reader" class="overflow-hidden rounded-lg bg-black text-white min-h-[220px] flex items-center justify-center">
-        <span class="text-xs text-slate-400">Kamera belum aktif</span>
+      <!-- Card GPS Check -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Lokasi Terkini</h2>
+        <div class="flex items-center justify-between text-xs mb-3">
+          <div>
+            <p id="geo-status" class="text-slate-600">Mengecek koordinat GPS...</p>
+            <p id="geo-distance" class="font-bold text-slate-800 mt-0.5">-</p>
+          </div>
+          <button onclick="getLokasi()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg border border-slate-300 font-medium transition">
+            Refresh GPS
+          </button>
+        </div>
       </div>
 
-      <div class="mt-4 flex gap-2">
-        <button id="btn-start" onclick="startScanner()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow-sm transition">
-          Buka Kamera
-        </button>
-        <button id="btn-stop" onclick="stopScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-sm py-2.5 rounded-lg transition hidden">
-          Tutup Kamera
-        </button>
+      <!-- Scanner Box -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Scan QR Absensi</h2>
+        
+        <div id="reader" class="overflow-hidden rounded-lg bg-black text-white min-h-[220px] flex items-center justify-center">
+          <span class="text-xs text-slate-400">Kamera belum aktif</span>
+        </div>
+
+        <div class="mt-4 flex gap-2">
+          <button id="btn-start" onclick="startScanner()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-lg shadow-sm transition">
+            Buka Kamera
+          </button>
+          <button id="btn-stop" onclick="stopScanner()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-sm py-2.5 rounded-lg transition hidden">
+            Tutup Kamera
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Status Output -->
-    <div id="alert-box" class="p-3 rounded-lg text-xs font-medium text-center hidden"></div>
+      <!-- Status Output -->
+      <div id="alert-box" class="p-3 rounded-lg text-xs font-medium text-center hidden"></div>
 
-  </main>
+    </main>
+  </div>
+
+  <!-- Footer Cantik -->
+  <footer class="max-w-md mx-auto w-full px-4 mt-8 text-center text-xs text-slate-500 space-y-1">
+    <p class="font-semibold text-indigo-600">SMP PLUS ANNUUR</p>
+    <p>Sistem Presensi Digital berbasis Geolocation (GPS) dan QR Code Guru.</p>
+    <p class="text-[10px] text-slate-400 pt-2">© 2026 - All Rights Reserved</p>
+  </footer>
 
   <script>
     // ----------------------------------------------------
-    // 1. KONFIGURASI FIREBASE (Disamakan dengan Admin)
+    // 1. KONFIGURASI FIREBASE
     // ----------------------------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyDmxGccK6cizGDR48KkESFgimHFo4-xPw4",
@@ -289,7 +298,7 @@
     }
 
     // ----------------------------------------------------
-    // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE (Dengan Validasi Device ID Ketat)
+    // 7. PROSES & VALIDASI ABSENSI HARIAN KE FIREBASE
     // ----------------------------------------------------
     async function prosesAbsensi(qrContent) {
       const guruSelect = document.getElementById("select-guru");
@@ -304,20 +313,18 @@
 
       const guruObj = dataGuruSemua.find(g => g.id === guruId);
 
-      // --- VALIDASI KETAT 1: CEK APAKAH HP INI SUDAH TERIKAT KE AKUN GURU LAIN ---
+      // Validasi Device ID Binding
       const guruTerikatDiHpIni = dataGuruSemua.find(g => g.device_id === deviceUUID);
       if (guruTerikatDiHpIni && guruTerikatDiHpIni.id !== guruId) {
-        showAlert(`Gagal Absen: Perangkat ini sudah terikat permanen dengan akun atas nama "${guruTerikatDiHpIni.name}". Satu HP hanya untuk satu akun guru!`, "error");
+        showAlert(`Gagal Absen: Perangkat ini sudah terikat dengan akun "${guruTerikatDiHpIni.name}". Satu HP hanya untuk satu akun guru!`, "error");
         return;
       }
 
-      // --- VALIDASI KETAT 2: CEK APAKAH AKUN GURU INI SUDAH TERIKAT DI HP LAIN ---
       if (guruObj && guruObj.device_id && guruObj.device_id !== deviceUUID) {
         showAlert("Gagal Absen: Akun Anda sudah terikat di HP lain! Hubungi Admin untuk reset HP.", "error");
         return;
       }
 
-      // Jika akun belum punya device_id, ikat ke HP ini sekarang
       if (guruObj && !guruObj.device_id) {
         await db.collection("teachers").doc(guruId).update({ device_id: deviceUUID });
       }
@@ -330,7 +337,6 @@
           .get();
 
         if (jenisAbsenPilihan === "masuk") {
-          // Paksa Absen Masuk
           if (!querySnapshot.empty) {
             const dataAbsen = querySnapshot.docs[0].data();
             if (dataAbsen.check_in_time && dataAbsen.check_in_time !== "-") {
@@ -366,7 +372,6 @@
           showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
 
         } else if (jenisAbsenPilihan === "pulang") {
-          // Paksa Absen Pulang
           if (querySnapshot.empty) {
             showAlert(`⚠️ ${guruNama}, Anda belum melakukan Absen Masuk hari ini.`, "error");
             return;
@@ -382,7 +387,6 @@
           showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
 
         } else {
-          // Mode Otomatis
           if (querySnapshot.empty) {
             const payloadMasuk = {
               teacher_id: guruId,
