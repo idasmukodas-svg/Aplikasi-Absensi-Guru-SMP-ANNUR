@@ -99,6 +99,7 @@
       <li><a href="#sec-lokasi" class="nav-link">Lokasi & Radius</a></li>
       <li><a href="#sec-qrcode" class="nav-link">QR Code</a></li>
       <li><a href="#sec-guru" class="nav-link">Master Guru</a></li>
+      <li><a href="#sec-status-khusus" class="nav-link">Status Khusus / Izin</a></li>
       <li><a href="#sec-rekap" class="nav-link">Rekapitulasi</a></li>
     </ul>
 
@@ -248,7 +249,69 @@
         </table>
       </div>
     </div>
+<!-- KARTU KONTROL STATUS KHUSUS (IZIN, SAKIT, CUTI, LIBUR) -->
+    <div class="card" id="sec-status-khusus">
+      <h2 style="margin-top: 0; color: #1b5e20; font-size: 18px; border-bottom: 2px solid #e8f5e9; padding-bottom: 8px;">
+        📝 Manajemen Status Khusus & Hari Libur Guru
+      </h2>
+      <p style="font-size: 13px; color: #666; margin-bottom: 15px;">
+        Gunakan form ini untuk mencatat guru yang Sakit, Izin, Cuti, atau menetapkan Hari Libur sekolah agar rekapitulasi persentase kehadiran tetap akurat.
+      </p>
 
+      <div class="form-grid">
+        <!-- Input Tanggal -->
+        <div class="form-group">
+          <label class="font-semibold text-xs text-slate-700">Pilih Tanggal</label>
+          <input type="date" id="inputTanggalStatus" class="form-control">
+        </div>
+
+        <!-- Pilih Jenis Aksi -->
+        <div class="form-group">
+          <label class="font-semibold text-xs text-slate-700">Jenis Pengaturan</label>
+          <select id="selectJenisStatus" class="form-control" onchange="toggleFormStatusMode()">
+            <option value="guru_khusus">Status Guru (Sakit / Izin / Cuti / Alpha)</option>
+            <option value="hari_libur">Penanda Hari Libur / Sekolah Kosong</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Form Khusus Guru -->
+      <div id="wrapperFormGuru" class="form-grid">
+        <div class="form-group">
+          <label class="font-semibold text-xs text-slate-700">Pilih Guru</label>
+          <select id="selectAdminGuru" class="form-control">
+            <option value="">-- Memuat Guru --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="font-semibold text-xs text-slate-700">Status Kehadiran</label>
+          <select id="selectStatusPilihan" class="form-control">
+            <option value="Sakit">Sakit (S)</option>
+            <option value="Izin">Izin (I)</option>
+            <option value="Cuti">Cuti (C)</option>
+            <option value="Alpha">Tanpa Keterangan / Alpha (A)</option>
+          </select>
+        </div>
+        <div class="form-group full-width">
+          <label class="font-semibold text-xs text-slate-700">Keterangan Tambahan (Opsional)</label>
+          <input type="text" id="inputKeteranganStatus" class="form-control" placeholder="Contoh: Mengikuti diklat kabupaten / Berobat ke dokter">
+        </div>
+      </div>
+
+      <!-- Form Khusus Hari Libur (Hidden by default) -->
+      <div id="wrapperFormLibur" class="form-grid" style="display: none;">
+        <div class="form-group full-width">
+          <label class="font-semibold text-xs text-slate-700">Keterangan Libur / Kegiatan Sekolah</label>
+          <input type="text" id="inputKeteranganLibur" class="form-control" placeholder="Contoh: Libur Nasional Hari Raya / Kegiatan Pesantren Kilat">
+        </div>
+      </div>
+
+      <button onclick="simpanStatusKhususAdmin()" class="btn btn-primary" style="margin-top: 10px;">
+        💾 Simpan Perubahan Status
+      </button>
+
+      <div id="alertStatusAdmin" class="status-badge" style="display: none; margin-top: 10px;"></div>
+    </div>
     <!-- Central Filter & Report Card -->
     <div class="card" id="sec-rekap">
       <h2>2. Rekapitulasi Absensi & Persentase Kehadiran Guru</h2>
@@ -838,8 +901,145 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       generateQRCode();
+    // ----------------------------------------------------
+    // MANAJEMEN STATUS KHUSUS (IZIN, SAKIT, CUTI, LIBUR)
+    // ----------------------------------------------------
+
+    // Mengganti tampilan form berdasarkan pilihan (Guru / Hari Libur)
+    function toggleFormStatusMode() {
+      const mode = document.getElementById("selectJenisStatus").value;
+      const wGuru = document.getElementById("wrapperFormGuru");
+      const wLibur = document.getElementById("wrapperFormLibur");
+
+      if (mode === "guru_khusus") {
+        wGuru.style.display = "grid";
+        wLibur.style.display = "none";
+      } else {
+        wGuru.style.display = "none";
+        wLibur.style.display = "grid";
+      }
+    }
+
+    // Memuat daftar guru ke dalam dropdown form status khusus
+    function loadDaftarGuruAdminDropdown() {
+      const select = document.getElementById("selectAdminGuru");
+      if (!select) return;
+
+      db.collection("teachers").get().then((snap) => {
+        select.innerHTML = '<option value="">-- Pilih Guru --</option>';
+        const listGuru = [];
+        snap.docs.forEach(doc => {
+          listGuru.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Urutkan nama guru A-Z
+        listGuru.sort((a, b) => (a.name > b.name) ? 1 : -1);
+
+        listGuru.forEach(g => {
+          select.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+        });
+      }).catch(err => console.error("Gagal muat dropdown guru admin:", err));
+    }
+
+    // Menyimpan data Status Khusus / Hari Libur ke Firebase Firestore
+    async function simpanStatusKhususAdmin() {
+      const tanggal = document.getElementById("inputTanggalStatus").value;
+      const jenisAksi = document.getElementById("selectJenisStatus").value;
+      const alertBox = document.getElementById("alertStatusAdmin");
+
+      if (!tanggal) {
+        alert("Silakan pilih tanggal terlebih dahulu!");
+        return;
+      }
+
+      alertBox.style.display = "block";
+      alertBox.style.background = "#fff3e0";
+      alertBox.style.color = "#f57c00";
+      alertBox.innerText = "⏳ Sedang menyimpan data ke Firebase...";
+
+      try {
+        if (jenisAksi === "guru_khusus") {
+          const guruId = document.getElementById("selectAdminGuru").value;
+          const statusVal = document.getElementById("selectStatusPilihan").value;
+          const ket = document.getElementById("inputKeteranganStatus").value;
+
+          if (!guruId) {
+            alert("Silakan pilih nama guru terlebih dahulu!");
+            alertBox.style.display = "none";
+            return;
+          }
+
+          const guruDoc = await db.collection("teachers").doc(guruId).get();
+          const guruNama = guruDoc.exists ? guruDoc.data().name : "Guru";
+
+          // Cek apakah sudah ada catatan presensi pada tanggal & guru tersebut
+          const querySnap = await db.collection("attendances")
+            .where("date", "==", tanggal)
+            .where("teacher_id", "==", guruId)
+            .get();
+
+          const payload = {
+            teacher_id: guruId,
+            teacher_name: guruNama,
+            user_name: guruNama,
+            date: tanggal,
+            check_in_time: "-",
+            check_out_time: "-",
+            status: statusVal, // Sakit / Izin / Cuti / Alpha
+            keterangan: ket || "-",
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          if (querySnap.empty) {
+            await db.collection("attendances").add(payload);
+          } else {
+            await db.collection("attendances").doc(querySnap.docs[0].id).update(payload);
+          }
+
+          alertBox.style.background = "#e8f5e9";
+          alertBox.style.color = "#2e7d32";
+          alertBox.innerText = `✅ Berhasil! Status ${guruNama} pada tanggal ${tanggal} telah dicatat sebagai: ${statusVal}`;
+
+        } else {
+          // Mode Penanda Hari Libur
+          const ketLibur = document.getElementById("inputKeteranganLibur").value;
+          if (!ketLibur) {
+            alert("Silakan isi keterangan hari libur terlebih dahulu!");
+            alertBox.style.display = "none";
+            return;
+          }
+
+          await db.collection("holidays").doc(tanggal).set({
+            date: tanggal,
+            description: ketLibur,
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          alertBox.style.background = "#e8f5e9";
+          alertBox.style.color = "#2e7d32";
+          alertBox.innerText = `✅ Berhasil! Tanggal ${tanggal} telah ditandai sebagai Hari Libur: "${ketLibur}"`;
+        }
+
+      } catch (err) {
+        alertBox.style.background = "#ffebee";
+        alertBox.style.color = "#d32f2f";
+        alertBox.innerText = "❌ Gagal menyimpan data: " + err.message;
+      }
+    }
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", () => {
+      generateQRCode();
+
+      // Tambahan inisialisasi status khusus
+      const inputTgl = document.getElementById("inputTanggalStatus");
+      if (inputTgl) {
+        const todayIso = new Date().toISOString().split('T')[0];
+        inputTgl.value = todayIso;
+      }
+      loadDaftarGuruAdminDropdown();
     });
-  </script>
+</script>
 
   <!-- Footer Bersih & Profesional -->
   <footer class="bg-emerald-800 text-white py-6 text-center text-xs space-y-1 mt-6" style="background-color: #1b5e20; color: white; padding: 20px 0; text-align: center; margin-top: 40px;">
