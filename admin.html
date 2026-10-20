@@ -906,7 +906,6 @@
     // MANAJEMEN STATUS KHUSUS (IZIN, SAKIT, CUTI, LIBUR)
     // ----------------------------------------------------
 
-    // Mengganti tampilan form berdasarkan pilihan (Guru / Hari Libur)
     function toggleFormStatusMode() {
       const mode = document.getElementById("selectJenisStatus").value;
       const wGuru = document.getElementById("wrapperFormGuru");
@@ -921,7 +920,6 @@
       }
     }
 
-    // Memuat daftar guru ke dalam dropdown form status khusus
     function loadDaftarGuruAdminDropdown() {
       const select = document.getElementById("selectAdminGuru");
       if (!select) return;
@@ -933,7 +931,6 @@
           listGuru.push({ id: doc.id, ...doc.data() });
         });
 
-        // Urutkan nama guru A-Z
         listGuru.sort((a, b) => (a.name > b.name) ? 1 : -1);
 
         listGuru.forEach(g => {
@@ -942,7 +939,6 @@
       }).catch(err => console.error("Gagal muat dropdown guru admin:", err));
     }
 
-    // Menyimpan data Status Khusus / Hari Libur ke Firebase Firestore
     async function simpanStatusKhususAdmin() {
       const tanggal = document.getElementById("inputTanggalStatus").value;
       const jenisAksi = document.getElementById("selectJenisStatus").value;
@@ -973,7 +969,6 @@
           const guruDoc = await db.collection("teachers").doc(guruId).get();
           const guruNama = guruDoc.exists ? guruDoc.data().name : "Guru";
 
-          // Cek apakah sudah ada catatan presensi pada tanggal & guru tersebut
           const querySnap = await db.collection("attendances")
             .where("date", "==", tanggal)
             .where("teacher_id", "==", guruId)
@@ -986,7 +981,7 @@
             date: tanggal,
             check_in_time: "-",
             check_out_time: "-",
-            status: statusVal, // Sakit / Izin / Cuti / Alpha
+            status: statusVal,
             keterangan: ket || "-",
             updated_at: firebase.firestore.FieldValue.serverTimestamp()
           };
@@ -1002,7 +997,6 @@
           alertBox.innerText = `✅ Berhasil! Status ${guruNama} pada tanggal ${tanggal} telah dicatat sebagai: ${statusVal}`;
 
         } else {
-          // Mode Penanda Hari Libur
           const ketLibur = document.getElementById("inputKeteranganLibur").value;
           if (!ketLibur) {
             alert("Silakan isi keterangan hari libur terlebih dahulu!");
@@ -1034,7 +1028,6 @@
         generateQRCode();
       }
 
-      // Inisialisasi input tanggal default hari ini
       const inputTgl = document.getElementById("inputTanggalStatus");
       if (inputTgl) {
         const todayIso = new Date().toISOString().split('T')[0];
@@ -1044,15 +1037,5 @@
       loadDaftarGuruAdminDropdown();
     });
   </script>
-
-  <!-- Footer Bersih & Profesional -->
-  <footer class="bg-emerald-800 text-white py-6 text-center text-xs space-y-1 mt-6" style="background-color: #1b5e20; color: white; padding: 20px 0;">
-    <div style="max-width: 1100px; margin: 0 auto; padding: 0 15px;">
-      <p style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">SMP PLUS ANNUUR</p>
-      <p style="margin: 0; opacity: 0.9;">Sistem E-Admin Presensi Digital berbasis Geolocation (GPS) dan QR Code.</p>
-      <p style="margin: 4px 0 0 0; font-weight: 500; color: #a5d6a7;">Developed by TRIHIRA Studio Apps. Idas Mukodas.</p>
-      <p style="font-size: 10px; opacity: 0.7; margin-top: 6px;">© 2026 - All Rights Reserved</p>
-    </div>
-  </footer>
 </body>
 </html>
