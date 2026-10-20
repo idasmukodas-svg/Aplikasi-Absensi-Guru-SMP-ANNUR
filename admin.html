@@ -899,13 +899,9 @@
       XLSX.writeFile(wb, `Rekap_Absensi_Guru_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      generateQRCode();
-      
     // ----------------------------------------------------
     // MANAJEMEN STATUS KHUSUS (IZIN, SAKIT, CUTI, LIBUR)
     // ----------------------------------------------------
-
     function toggleFormStatusMode() {
       const mode = document.getElementById("selectJenisStatus").value;
       const wGuru = document.getElementById("wrapperFormGuru");
@@ -1022,7 +1018,6 @@
       }
     }
 
-    // Inisialisasi saat halaman dimuat
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof generateQRCode === "function") {
         generateQRCode();
@@ -1037,5 +1032,15 @@
       loadDaftarGuruAdminDropdown();
     });
   </script>
+
+  <!-- Footer Bersih & Profesional -->
+  <footer class="bg-emerald-800 text-white py-6 text-center text-xs space-y-1 mt-6" style="background-color: #1b5e20; color: white; padding: 20px 0;">
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 15px;">
+      <p style="font-weight: bold; font-size: 15px; margin-bottom: 8px;">SMP PLUS ANNUUR</p>
+      <p style="margin: 0; opacity: 0.9;">Sistem E-Admin Presensi Digital berbasis Geolocation (GPS) dan QR Code.</p>
+      <p style="margin: 4px 0 0 0; font-weight: 500; color: #a5d6a7;">Developed by TRIHIRA Studio Apps. Idas Mukodas.</p>
+      <p style="font-size: 10px; opacity: 0.7; margin-top: 6px;">© 2026 - All Rights Reserved</p>
+    </div>
+  </footer>
 </body>
 </html>
