@@ -31,12 +31,20 @@
 
     <main class="max-w-md mx-auto p-4 space-y-4 pb-8">
 
+      <!-- BANNER PENGINGAT JADWAL & STATUS HARI INI -->
+      <div id="bannerPengingat" class="p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-sm shadow-sm">
+        <div class="flex items-center gap-2 font-bold mb-1">
+          <span>📌 Status Presensi Hari Ini:</span>
+        </div>
+        <p id="teksPengingat">Memuat status jadwal Anda...</p>
+      </div>
+
       <!-- Card Profil & Device ID -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Identitas Perangkat</h2>
         <div class="mb-3">
           <label class="block text-xs font-medium text-slate-600 mb-1">Pilih Nama Guru</label>
-          <select id="select-guru" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none">
+          <select id="select-guru" onchange="cekStatusAbsensiGuru()" class="w-full p-2 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="">-- Memuat Daftar Guru... --</option>
           </select>
         </div>
@@ -250,6 +258,48 @@
     }
 
     // ----------------------------------------------------
+    // 5.1. CEK STATUS & BANNER PENGINGAT HARIAN
+    // ----------------------------------------------------
+    async function cekStatusAbsensiGuru() {
+      const guruId = document.getElementById("select-guru").value;
+      const banner = document.getElementById("bannerPengingat");
+      const teks = document.getElementById("teksPengingat");
+
+      if (!guruId) {
+        banner.className = "p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-sm shadow-sm";
+        teks.innerHTML = "Silakan pilih nama Anda terlebih dahulu pada daftar di bawah.";
+        return;
+      }
+
+      const now = new Date();
+      const tglStr = now.toISOString().split('T')[0];
+      const hariIni = now.toLocaleDateString('id-ID', { weekday: 'long' });
+
+      try {
+        const querySnapshot = await db.collection("attendances")
+          .where("date", "==", tglStr)
+          .where("teacher_id", "==", guruId)
+          .get();
+
+        if (querySnapshot.empty) {
+          banner.className = "p-4 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-sm shadow-sm";
+          teks.innerHTML = `🔔 <strong>Pengingat Hari Ini (${hariIni}):</strong> Anda belum melakukan <strong>Absen Masuk</strong>. Silakan lakukan scan QR di area sekolah.`;
+        } else {
+          const data = querySnapshot.docs[0].data();
+          if (!data.check_out_time || data.check_out_time === "-") {
+            banner.className = "p-4 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm shadow-sm";
+            teks.innerHTML = `✅ Anda sudah <strong>Absen Masuk</strong> pukul <strong>${data.check_in_time}</strong>.<br>⚠️ Lakukan <strong>Absen Pulang</strong> hanya saat jam kerja selesai.`;
+          } else {
+            banner.className = "p-4 rounded-lg bg-blue-50 border border-blue-300 text-blue-800 text-sm shadow-sm";
+            teks.innerHTML = `🎉 Presensi hari ini lengkap (Masuk: ${data.check_in_time} | Pulang: ${data.check_out_time}). Sampai jumpa besok!`;
+          }
+        }
+      } catch (err) {
+        console.error("Gagal cek status:", err);
+      }
+    }
+
+    // ----------------------------------------------------
     // 6. LOGIKA SCANNER QR CODE
     // ----------------------------------------------------
     function startScanner() {
@@ -293,6 +343,16 @@
       if (distance > MAX_RADIUS) {
         showAlert(`Gagal Absen: Jarak Anda (${Math.round(distance)}m) melebihi radius sekolah (${MAX_RADIUS}m).`, "error");
         return;
+      }
+
+      // Konfirmasi Pop-up jika mode Pulang dipilih
+      const jenisAbsenPilihan = document.getElementById("select-jenis-absen").value;
+      if (jenisAbsenPilihan === "pulang") {
+        const konfirmasi = confirm("⚠️ KONFIRMASI ABSEN PULANG\n\nApakah Anda yakin ingin melakukan Absen Pulang sekarang?\nPastikan seluruh tugas mengajar Anda hari ini telah selesai.");
+        if (!konfirmasi) {
+          showAlert("Absen pulang dibatalkan.", "error");
+          return;
+        }
       }
 
       prosesAbsensi(decodedText);
@@ -371,6 +431,7 @@
             });
           }
           showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
+          cekStatusAbsensiGuru();
 
         } else if (jenisAbsenPilihan === "pulang") {
           if (querySnapshot.empty) {
@@ -386,8 +447,10 @@
             updated_at: firebase.firestore.FieldValue.serverTimestamp()
           });
           showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
+          cekStatusAbsensiGuru();
 
         } else {
+          // Mode Otomatis
           if (querySnapshot.empty) {
             const payloadMasuk = {
               teacher_id: guruId,
@@ -406,6 +469,7 @@
 
             await attendanceRef.add(payloadMasuk);
             showAlert(`Berhasil! Absensi MASUK atas nama ${guruNama} tercatat pukul ${jamStr} WIB ✅`, "success");
+            cekStatusAbsensiGuru();
 
           } else {
             const docSnap = querySnapshot.docs[0];
@@ -413,6 +477,13 @@
             const dataAbsen = docSnap.data();
 
             if (!dataAbsen.check_out_time || dataAbsen.check_out_time === "-") {
+              // Konfirmasi pop-up otomatis saat sistem membaca absen kedua (pulang)
+              const konfirmasiOtomatis = confirm("⚠️ KONFIRMASI ABSEN PULANG\n\nAnda sudah absen masuk hari ini. Ingin melanjutkan proses Absen Pulang?");
+              if (!konfirmasiOtomatis) {
+                showAlert("Absen pulang dibatalkan.", "error");
+                return;
+              }
+
               await attendanceRef.doc(docId).update({
                 check_out_time: jamStr,
                 check_out_latitude: userLat,
@@ -420,6 +491,7 @@
                 updated_at: firebase.firestore.FieldValue.serverTimestamp()
               });
               showAlert(`Berhasil! Absensi PULANG atas nama ${guruNama} tercatat pukul ${jamStr} WIB. Hati-hati di jalan! 👋`, "success");
+              cekStatusAbsensiGuru();
 
             } else {
               showAlert(`⚠️ Mohon Maaf, ${guruNama}, Anda sudah menyelesaikan Absensi Masuk dan Pulang untuk hari ini.`, "error");
